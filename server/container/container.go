@@ -17,6 +17,7 @@ type Container struct {
 	RepositoryFactory *factories.RepositoryFactory
 	ServiceFactory    *factories.ServiceFactory
 	UserRepository    repositories.UserRepository
+	WidgetRepository  repositories.WidgetRepository
 	UserService       services.UserService
 	AuthService       services.AuthService
 	ChatService       services.ChatService
@@ -32,6 +33,7 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		userRepo         repositories.UserRepository
 		conversationRepo repositories.ConversationRepository
 		messageRepo      repositories.MessageRepository
+		widgetRepo       repositories.WidgetRepository
 		userService      services.UserService
 		authService      services.AuthService
 	)
@@ -41,6 +43,7 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		userRepo = repoFactory.CreateUserRepository()
 		conversationRepo = repoFactory.CreateConversationRepository()
 		messageRepo = repoFactory.CreateMessageRepository()
+		widgetRepo = repoFactory.CreateWidgetRepository()
 		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, cacheClient)
 		userService = serviceFactory.CreateUserService()
 		authService = serviceFactory.CreateAuthService()
@@ -57,6 +60,7 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		RepositoryFactory: repoFactory,
 		ServiceFactory:    serviceFactory,
 		UserRepository:    userRepo,
+		WidgetRepository:  widgetRepo,
 		UserService:       userService,
 		AuthService:       authService,
 		ChatService:       chatService,

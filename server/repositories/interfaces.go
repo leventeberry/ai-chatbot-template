@@ -26,3 +26,8 @@ type MessageRepository interface {
 	Create(message *models.Message) error
 	FindByConversationID(conversationID string) ([]models.Message, error)
 }
+
+// WidgetRepository defines the interface for widget operations
+type WidgetRepository interface {
+	FindByID(id string) (*models.Widget, error)
+}

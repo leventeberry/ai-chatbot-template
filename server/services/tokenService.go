@@ -51,12 +51,12 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 func (s *envTokenService) defaultClaims() tokens.TokenClaims {
 	tenantID := s.tenantID
 	if tenantID == "" {
-		tenantID = "dev-tenant"
+		tenantID = "00000000-0000-0000-0000-000000000001"
 	}
 
 	widgetID := s.widgetID
 	if widgetID == "" {
-		widgetID = "dev-widget"
+		widgetID = "00000000-0000-0000-0000-000000000002"
 	}
 
 	return tokens.TokenClaims{

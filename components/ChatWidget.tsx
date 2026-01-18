@@ -22,6 +22,7 @@ type ChatMessage = {
 const FALLBACK_ERROR_MESSAGE =
   "Sorry, I'm having trouble connecting to the AI.";
 const HISTORY_CACHE_KEY = "chatbot-history";
+const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,7 +47,12 @@ export function ChatWidget() {
       try {
         const res = await fetch("/api/widget/session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(WIDGET_AUTH_TOKEN
+              ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
+              : {}),
+          },
         });
         if (!res.ok) throw new Error("Failed to create session.");
         const data = (await res.json()) as { session_id: string };
@@ -86,7 +92,12 @@ export function ChatWidget() {
       try {
         const res = await fetch(
           `/api/chat/history?session_id=${encodeURIComponent(sessionId)}`,
-          { credentials: "include" }
+          {
+            credentials: "include",
+            headers: WIDGET_AUTH_TOKEN
+              ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
+              : undefined,
+          }
         );
         if (!res.ok) throw new Error("Failed to fetch chat history.");
         const data = (await res.json()) as { role: string; content: string }[];
@@ -143,7 +154,12 @@ export function ChatWidget() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(WIDGET_AUTH_TOKEN
+            ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
+            : {}),
+        },
         credentials: "include",
         body: JSON.stringify({
           message: trimmed,

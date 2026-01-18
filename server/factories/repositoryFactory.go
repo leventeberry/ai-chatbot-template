@@ -32,3 +32,8 @@ func (f *RepositoryFactory) CreateConversationRepository() repositories.Conversa
 func (f *RepositoryFactory) CreateMessageRepository() repositories.MessageRepository {
 	return repositories.NewMessageRepository(f.db)
 }
+
+// CreateWidgetRepository creates a WidgetRepository instance
+func (f *RepositoryFactory) CreateWidgetRepository() repositories.WidgetRepository {
+	return repositories.NewWidgetRepository(f.db)
+}
