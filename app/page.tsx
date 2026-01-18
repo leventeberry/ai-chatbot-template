@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ChatWidget } from "@/components/ChatWidget";
+import { LoginDialog } from "@/components/LoginDialog";
 import {
   ArrowRight,
   CheckCircle,
@@ -38,9 +39,7 @@ export default function Home() {
               </a>
             </div>
             <div className="flex items-center gap-4">
-              <button className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Log in
-              </button>
+              <LoginDialog />
               <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 transition-all">
                 Get Started
               </button>
