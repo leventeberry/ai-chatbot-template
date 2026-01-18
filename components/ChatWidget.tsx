@@ -19,15 +19,24 @@ type ChatMessage = {
   content: string;
 };
 
+type WidgetConfig = {
+  id: string;
+  name: string;
+  allowed_origins: string;
+  config: string;
+};
+
 const FALLBACK_ERROR_MESSAGE =
   "Sorry, I'm having trouble connecting to the AI.";
 const HISTORY_CACHE_KEY = "chatbot-history";
 const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
+const DEFAULT_WIDGET_TITLE = "AI Assistant";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [widgetTitle, setWidgetTitle] = useState(DEFAULT_WIDGET_TITLE);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [showHistorySync, setShowHistorySync] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -39,6 +48,28 @@ export function ChatWidget() {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isOpen, isSending]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadConfig = async () => {
+      try {
+        const res = await fetch("/api/widget/config", {
+          headers: WIDGET_AUTH_TOKEN
+            ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
+            : undefined,
+        });
+        if (!res.ok) throw new Error("Failed to fetch widget config.");
+        const data = (await res.json()) as WidgetConfig;
+        const title = resolveWidgetTitle(data);
+        setWidgetTitle(title);
+      } catch {
+        setWidgetTitle(DEFAULT_WIDGET_TITLE);
+      }
+    };
+
+    void loadConfig();
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || sessionId) return;
@@ -209,7 +240,7 @@ export function ChatWidget() {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg leading-tight font-display">
-                    AI Assistant
+                    {widgetTitle}
                   </h3>
                   <div className="flex items-center gap-1.5 opacity-90">
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -386,4 +417,19 @@ export function ChatWidget() {
       </motion.button>
     </div>
   );
+}
+
+function resolveWidgetTitle(config: WidgetConfig): string {
+  const raw = config?.config ?? "";
+  if (raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as { title?: string; name?: string };
+      if (parsed?.title) return parsed.title;
+      if (parsed?.name) return parsed.name;
+    } catch {
+      // ignore invalid widget config JSON
+    }
+  }
+
+  return config?.name || DEFAULT_WIDGET_TITLE;
 }
