@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"chatbot_api/logger"
+	"chatbot_api/models"
+	"chatbot_api/repositories"
 )
 
 type ChatMessage struct {
@@ -21,21 +23,26 @@ type ChatMessage struct {
 }
 
 type ChatService interface {
-	GetHistory(ctx context.Context) []ChatMessage
-	SendMessage(ctx context.Context, message string) ChatMessage
+	GetHistory(ctx context.Context, tenantID, widgetID, sessionID string) []ChatMessage
+	SendMessage(ctx context.Context, tenantID, widgetID, sessionID, message string) ChatMessage
 }
 
 type chatService struct {
-	mu       sync.Mutex
-	history  []ChatMessage
-	apiKey   string
-	baseURL  string
-	model    string
-	client   *http.Client
-	fallback string
+	mu               sync.Mutex
+	history          map[string][]ChatMessage
+	conversationRepo repositories.ConversationRepository
+	messageRepo      repositories.MessageRepository
+	apiKey           string
+	baseURL          string
+	model            string
+	client           *http.Client
+	fallback         string
 }
 
-func NewChatService() ChatService {
+func NewChatService(
+	conversationRepo repositories.ConversationRepository,
+	messageRepo repositories.MessageRepository,
+) ChatService {
 	baseURL := strings.TrimSpace(os.Getenv("AI_INTEGRATIONS_OPENAI_BASE_URL"))
 	if baseURL == "" {
 		baseURL = "https://api.openai.com/v1"
@@ -47,35 +54,106 @@ func NewChatService() ChatService {
 	}
 
 	return &chatService{
-		apiKey:   strings.TrimSpace(os.Getenv("AI_INTEGRATIONS_OPENAI_API_KEY")),
-		baseURL:  baseURL,
-		model:    model,
-		client:   &http.Client{Timeout: 60 * time.Second},
-		fallback: "Sorry, I'm having trouble connecting to the AI.",
+		history:          map[string][]ChatMessage{},
+		conversationRepo: conversationRepo,
+		messageRepo:      messageRepo,
+		apiKey:           strings.TrimSpace(os.Getenv("AI_INTEGRATIONS_OPENAI_API_KEY")),
+		baseURL:          baseURL,
+		model:            model,
+		client:           &http.Client{Timeout: 60 * time.Second},
+		fallback:         "Sorry, I'm having trouble connecting to the AI.",
 	}
 }
 
-func (s *chatService) GetHistory(_ context.Context) []ChatMessage {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *chatService) GetHistory(ctx context.Context, tenantID, widgetID, sessionID string) []ChatMessage {
+	if !s.hasRepositories() {
+		return s.getHistoryInMemory(tenantID, widgetID, sessionID)
+	}
 
-	if s.history == nil {
+	conversation, err := s.conversationRepo.FindBySession(tenantID, widgetID, sessionID)
+	if err != nil {
+		if errors.Is(err, repositories.ErrConversationNotFound) {
+			return []ChatMessage{}
+		}
+		logger.Log.Warn().Err(err).Msg("Failed to fetch conversation")
 		return []ChatMessage{}
 	}
 
-	return append([]ChatMessage(nil), s.history...)
+	messages, err := s.messageRepo.FindByConversationID(conversation.ID)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to fetch messages")
+		return []ChatMessage{}
+	}
+
+	return mapMessages(messages)
 }
 
-func (s *chatService) SendMessage(ctx context.Context, message string) ChatMessage {
+func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessionID, message string) ChatMessage {
 	trimmed := strings.TrimSpace(message)
 	if trimmed == "" {
 		return ChatMessage{Role: "assistant", Content: "Message is required."}
 	}
 
-	userMsg := ChatMessage{Role: "user", Content: trimmed}
+	if !s.hasRepositories() {
+		return s.sendMessageInMemory(tenantID, widgetID, sessionID, trimmed)
+	}
+
+	if s.apiKey == "" {
+		resp := ChatMessage{
+			Role:    "assistant",
+			Content: "AI key is not configured for this deployment.",
+		}
+		s.appendMessageDB(tenantID, widgetID, sessionID, resp)
+		return resp
+	}
+
+	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to fetch conversation")
+		return ChatMessage{Role: "assistant", Content: s.fallback}
+	}
+
+	if err := s.messageRepo.Create(&models.Message{
+		TenantID:       tenantID,
+		ConversationID: conversation.ID,
+		Role:           "user",
+		Content:        trimmed,
+	}); err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to store user message")
+		return ChatMessage{Role: "assistant", Content: s.fallback}
+	}
+
+	historySnapshot := s.GetHistory(ctx, tenantID, widgetID, sessionID)
+	resp, err := s.callOpenAI(ctx, historySnapshot)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("OpenAI request failed")
+		resp = ChatMessage{Role: "assistant", Content: s.fallback}
+	}
+
+	s.appendMessageDB(tenantID, widgetID, sessionID, resp)
+	return resp
+}
+
+func (s *chatService) hasRepositories() bool {
+	return s.conversationRepo != nil && s.messageRepo != nil
+}
+
+func (s *chatService) getHistoryInMemory(tenantID, widgetID, sessionID string) []ChatMessage {
+	key := historyKey(tenantID, widgetID, sessionID)
 	s.mu.Lock()
-	s.history = append(s.history, userMsg)
-	historySnapshot := append([]ChatMessage(nil), s.history...)
+	defer s.mu.Unlock()
+
+	history := s.history[key]
+	return append([]ChatMessage(nil), history...)
+}
+
+func (s *chatService) sendMessageInMemory(tenantID, widgetID, sessionID, message string) ChatMessage {
+	key := historyKey(tenantID, widgetID, sessionID)
+	userMsg := ChatMessage{Role: "user", Content: message}
+
+	s.mu.Lock()
+	s.history[key] = append(s.history[key], userMsg)
+	historySnapshot := append([]ChatMessage(nil), s.history[key]...)
 	s.mu.Unlock()
 
 	if s.apiKey == "" {
@@ -83,24 +161,41 @@ func (s *chatService) SendMessage(ctx context.Context, message string) ChatMessa
 			Role:    "assistant",
 			Content: "AI key is not configured for this deployment.",
 		}
-		s.appendAssistant(resp)
+		s.appendAssistantInMemory(key, resp)
 		return resp
 	}
 
-	resp, err := s.callOpenAI(ctx, historySnapshot)
+	resp, err := s.callOpenAI(context.Background(), historySnapshot)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("OpenAI request failed")
 		resp = ChatMessage{Role: "assistant", Content: s.fallback}
 	}
 
-	s.appendAssistant(resp)
+	s.appendAssistantInMemory(key, resp)
 	return resp
 }
 
-func (s *chatService) appendAssistant(msg ChatMessage) {
+func (s *chatService) appendAssistantInMemory(key string, msg ChatMessage) {
 	s.mu.Lock()
-	s.history = append(s.history, msg)
+	s.history[key] = append(s.history[key], msg)
 	s.mu.Unlock()
+}
+
+func (s *chatService) appendMessageDB(tenantID, widgetID, sessionID string, msg ChatMessage) {
+	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to fetch conversation for assistant message")
+		return
+	}
+
+	if err := s.messageRepo.Create(&models.Message{
+		TenantID:       tenantID,
+		ConversationID: conversation.ID,
+		Role:           msg.Role,
+		Content:        msg.Content,
+	}); err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to store assistant message")
+	}
 }
 
 func (s *chatService) callOpenAI(ctx context.Context, msgs []ChatMessage) (ChatMessage, error) {
@@ -152,4 +247,19 @@ func (s *chatService) callOpenAI(ctx context.Context, msgs []ChatMessage) (ChatM
 	}
 
 	return result.Choices[0].Message, nil
+}
+
+func historyKey(tenantID, widgetID, sessionID string) string {
+	return tenantID + ":" + widgetID + ":" + sessionID
+}
+
+func mapMessages(messages []models.Message) []ChatMessage {
+	result := make([]ChatMessage, 0, len(messages))
+	for _, msg := range messages {
+		result = append(result, ChatMessage{
+			Role:    msg.Role,
+			Content: msg.Content,
+		})
+	}
+	return result
 }

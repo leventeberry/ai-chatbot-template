@@ -10,15 +10,24 @@ import (
 // ServiceFactory creates service instances
 // Implements Factory Pattern for service creation
 type ServiceFactory struct {
-	userRepo repositories.UserRepository
-	cache    cache.Cache
+	userRepo         repositories.UserRepository
+	conversationRepo repositories.ConversationRepository
+	messageRepo      repositories.MessageRepository
+	cache            cache.Cache
 }
 
 // NewServiceFactory creates a new service factory
-func NewServiceFactory(userRepo repositories.UserRepository, cacheClient cache.Cache) *ServiceFactory {
+func NewServiceFactory(
+	userRepo repositories.UserRepository,
+	conversationRepo repositories.ConversationRepository,
+	messageRepo repositories.MessageRepository,
+	cacheClient cache.Cache,
+) *ServiceFactory {
 	return &ServiceFactory{
-		userRepo: userRepo,
-		cache:    cacheClient,
+		userRepo:         userRepo,
+		conversationRepo: conversationRepo,
+		messageRepo:      messageRepo,
+		cache:            cacheClient,
 	}
 }
 
@@ -34,7 +43,7 @@ func (f *ServiceFactory) CreateAuthService() services.AuthService {
 
 // CreateChatService creates a ChatService instance
 func (f *ServiceFactory) CreateChatService() services.ChatService {
-	return services.NewChatService()
+	return services.NewChatService(f.conversationRepo, f.messageRepo)
 }
 
 // CreateTokenService creates a TokenService instance

@@ -23,3 +23,12 @@ func (f *RepositoryFactory) CreateUserRepository() repositories.UserRepository {
 	return repositories.NewUserRepository(f.db)
 }
 
+// CreateConversationRepository creates a ConversationRepository instance
+func (f *RepositoryFactory) CreateConversationRepository() repositories.ConversationRepository {
+	return repositories.NewConversationRepository(f.db)
+}
+
+// CreateMessageRepository creates a MessageRepository instance
+func (f *RepositoryFactory) CreateMessageRepository() repositories.MessageRepository {
+	return repositories.NewMessageRepository(f.db)
+}

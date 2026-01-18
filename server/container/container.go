@@ -27,21 +27,25 @@ type Container struct {
 // Uses Factory Pattern to create all dependencies
 func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 	var (
-		repoFactory    *factories.RepositoryFactory
-		serviceFactory *factories.ServiceFactory
-		userRepo       repositories.UserRepository
-		userService    services.UserService
-		authService    services.AuthService
+		repoFactory      *factories.RepositoryFactory
+		serviceFactory   *factories.ServiceFactory
+		userRepo         repositories.UserRepository
+		conversationRepo repositories.ConversationRepository
+		messageRepo      repositories.MessageRepository
+		userService      services.UserService
+		authService      services.AuthService
 	)
 
 	if db != nil {
 		repoFactory = factories.NewRepositoryFactory(db)
 		userRepo = repoFactory.CreateUserRepository()
-		serviceFactory = factories.NewServiceFactory(userRepo, cacheClient)
+		conversationRepo = repoFactory.CreateConversationRepository()
+		messageRepo = repoFactory.CreateMessageRepository()
+		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, cacheClient)
 		userService = serviceFactory.CreateUserService()
 		authService = serviceFactory.CreateAuthService()
 	} else {
-		serviceFactory = factories.NewServiceFactory(nil, cacheClient)
+		serviceFactory = factories.NewServiceFactory(nil, nil, nil, cacheClient)
 	}
 
 	chatService := serviceFactory.CreateChatService()

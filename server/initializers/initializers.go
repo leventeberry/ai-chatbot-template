@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"chatbot_api/cache"
 	"chatbot_api/config"
 	"chatbot_api/logger"
 	"chatbot_api/models"
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -102,6 +102,10 @@ func connectDB() {
 func migrateDB() {
 	if err := DB.AutoMigrate(
 		&models.User{},
+		&models.Tenant{},
+		&models.Widget{},
+		&models.Conversation{},
+		&models.Message{},
 		// add future models here, e.g. &controllers.Profile{}, &controllers.Order{},
 	); err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to run database migrations")

@@ -14,3 +14,15 @@ type UserRepository interface {
 	ExistsByEmail(email string) (bool, error)
 }
 
+// ConversationRepository defines the interface for conversation operations
+type ConversationRepository interface {
+	FindBySession(tenantID, widgetID, sessionID string) (*models.Conversation, error)
+	FindOrCreate(tenantID, widgetID, sessionID string) (*models.Conversation, error)
+	Create(conversation *models.Conversation) error
+}
+
+// MessageRepository defines the interface for message operations
+type MessageRepository interface {
+	Create(message *models.Message) error
+	FindByConversationID(conversationID string) ([]models.Message, error)
+}
