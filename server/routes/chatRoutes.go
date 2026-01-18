@@ -12,6 +12,7 @@ func SetupChatRoutes(router *gin.Engine, c *container.Container) {
 	api := router.Group("/api")
 	{
 		api.Use(middleware.WidgetAuthMiddleware(c.TokenService))
+		api.POST("/widget/session", controllers.CreateWidgetSession())
 		api.GET("/chat/history", controllers.ChatHistory(c.ChatService))
 		api.POST("/chat", controllers.SendChatMessage(c.ChatService))
 	}

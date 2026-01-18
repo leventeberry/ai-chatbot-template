@@ -30,6 +30,7 @@ export function ChatWidget() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [showHistorySync, setShowHistorySync] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydratedHistoryRef = useRef(false);
 
@@ -39,7 +40,27 @@ export function ChatWidget() {
   }, [messages, isOpen, isSending]);
 
   useEffect(() => {
-    if (!isOpen || messages.length > 0) return;
+    if (!isOpen || sessionId) return;
+
+    const createSession = async () => {
+      try {
+        const res = await fetch("/api/widget/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) throw new Error("Failed to create session.");
+        const data = (await res.json()) as { session_id: string };
+        setSessionId(data.session_id || "default");
+      } catch {
+        setSessionId("default");
+      }
+    };
+
+    void createSession();
+  }, [isOpen, sessionId]);
+
+  useEffect(() => {
+    if (!isOpen || messages.length > 0 || !sessionId) return;
 
     const loadHistory = async () => {
       let hadCache = false;
@@ -63,9 +84,10 @@ export function ChatWidget() {
       }
       setIsHistoryLoading(true);
       try {
-        const res = await fetch("/api/chat/history", {
-          credentials: "include",
-        });
+        const res = await fetch(
+          `/api/chat/history?session_id=${encodeURIComponent(sessionId)}`,
+          { credentials: "include" }
+        );
         if (!res.ok) throw new Error("Failed to fetch chat history.");
         const data = (await res.json()) as { role: string; content: string }[];
         const normalized = data.map((item, index) => {
@@ -96,7 +118,7 @@ export function ChatWidget() {
     };
 
     void loadHistory();
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, sessionId]);
 
   useEffect(() => {
     if (!isOpen || typeof window === "undefined") return;
@@ -123,7 +145,10 @@ export function ChatWidget() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          session_id: sessionId ?? "default",
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to send message.");
