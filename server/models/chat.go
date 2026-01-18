@@ -26,12 +26,13 @@ type Widget struct {
 }
 
 type ApiKey struct {
-	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
-	TenantID  string    `gorm:"type:uuid;index;not null" json:"tenant_id"`
-	WidgetID  string    `gorm:"type:uuid;index;not null" json:"widget_id"`
-	HashedKey string    `gorm:"not null" json:"-"`
-	Name      string    `gorm:"not null" json:"name"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         string     `gorm:"type:uuid;primaryKey" json:"id"`
+	TenantID   string     `gorm:"type:uuid;index;not null" json:"tenant_id"`
+	WidgetID   string     `gorm:"type:uuid;index;not null" json:"widget_id"`
+	HashedKey  string     `gorm:"not null" json:"-"`
+	Name       string     `gorm:"not null" json:"name"`
+	CreatedAt  time.Time  `json:"created_at"`
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 }
 
 type Conversation struct {

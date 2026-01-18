@@ -39,9 +39,10 @@ type WidgetTokenResponse struct {
 }
 
 type WidgetTokenSummary struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	CreatedAt  string  `json:"created_at"`
+	LastUsedAt *string `json:"last_used_at,omitempty"`
 }
 
 // CreateTenant provisions a new tenant.
@@ -249,10 +250,16 @@ func ListWidgetTokens(apiKeyRepo repositories.ApiKeyRepository) gin.HandlerFunc 
 
 		summaries := make([]WidgetTokenSummary, len(keys))
 		for i, key := range keys {
+			var lastUsed *string
+			if key.LastUsedAt != nil {
+				formatted := key.LastUsedAt.Format(time.RFC3339)
+				lastUsed = &formatted
+			}
 			summaries[i] = WidgetTokenSummary{
-				ID:        key.ID,
-				Name:      key.Name,
-				CreatedAt: key.CreatedAt.Format(time.RFC3339),
+				ID:         key.ID,
+				Name:       key.Name,
+				CreatedAt:  key.CreatedAt.Format(time.RFC3339),
+				LastUsedAt: lastUsed,
 			}
 		}
 

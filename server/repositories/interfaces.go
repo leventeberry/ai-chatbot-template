@@ -48,4 +48,5 @@ type ApiKeyRepository interface {
 	ListByWidgetID(widgetID string) ([]models.ApiKey, error)
 	DeleteByID(id string) error
 	DeleteByWidgetID(widgetID string) error
+	TouchLastUsedAt(id string) error
 }

@@ -3,6 +3,7 @@ package repositories
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"chatbot_api/models"
 	"gorm.io/gorm"
@@ -73,6 +74,14 @@ func (r *apiKeyRepository) DeleteByID(id string) error {
 func (r *apiKeyRepository) DeleteByWidgetID(widgetID string) error {
 	if err := r.db.Where("widget_id = ?", widgetID).Delete(&models.ApiKey{}).Error; err != nil {
 		return fmt.Errorf("failed to delete api keys for widget: %w", err)
+	}
+	return nil
+}
+
+func (r *apiKeyRepository) TouchLastUsedAt(id string) error {
+	now := time.Now().UTC()
+	if err := r.db.Model(&models.ApiKey{}).Where("id = ?", id).Update("last_used_at", &now).Error; err != nil {
+		return fmt.Errorf("failed to update last_used_at: %w", err)
 	}
 	return nil
 }

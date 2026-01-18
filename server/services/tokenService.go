@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"chatbot_api/logger"
 	"chatbot_api/repositories"
 	"chatbot_api/tokens"
 )
@@ -44,6 +45,10 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 				return s.defaultClaims(), nil
 			}
 			return tokens.TokenClaims{}, errors.New("invalid widget token")
+		}
+
+		if err := s.apiKeyRepo.TouchLastUsedAt(apiKey.ID); err != nil {
+			logger.Log.Warn().Err(err).Msg("Failed to update widget token last_used_at")
 		}
 
 		return tokens.TokenClaims{
