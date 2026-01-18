@@ -44,4 +44,8 @@ type TenantRepository interface {
 type ApiKeyRepository interface {
 	Create(apiKey *models.ApiKey) error
 	FindByHashedKey(hashedKey string) (*models.ApiKey, error)
+	FindByID(id string) (*models.ApiKey, error)
+	ListByWidgetID(widgetID string) ([]models.ApiKey, error)
+	DeleteByID(id string) error
+	DeleteByWidgetID(widgetID string) error
 }
