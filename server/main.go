@@ -1,124 +1,119 @@
 package main
 
 import (
-        "bytes"
-        "encoding/json"
-        "fmt"
-        "io"
-        "log"
-        "net/http"
-        "os"
-        "time"
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-        "github.com/go-chi/chi/v5"
-        "github.com/go-chi/chi/v5/middleware"
-        "github.com/go-chi/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/leventeberry/goapi/container"
+	"github.com/leventeberry/goapi/docs"
+	"github.com/leventeberry/goapi/initializers"
+	"github.com/leventeberry/goapi/logger"
+	"github.com/leventeberry/goapi/middleware"
+	"github.com/leventeberry/goapi/routes"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-type Message struct {
-        Role    string `json:"role"`
-        Content string `json:"content"`
-}
+// @title           GoAPI - RESTful API Template
+// @version         1.0
+// @description     A RESTful API built with Go (Golang) using the Gin web framework. This API provides user management functionality with JWT-based authentication, role-based access control (RBAC), and comprehensive middleware for security and logging.
+// @termsOfService  http://swagger.io/terms/
 
-type ChatRequest struct {
-        Message string `json:"message"`
-}
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
 
-var history []Message
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
-        r := chi.NewRouter()
+	// Initialize Swagger docs
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
-        r.Use(middleware.Logger)
-        r.Use(middleware.Recoverer)
-        r.Use(cors.Handler(cors.Options{
-                AllowedOrigins:   []string{"*"},
-                AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-                AllowedHeaders:   []string{"Content-Type", "Authorization"},
-                AllowCredentials: true,
-        }))
+	// Initialize environment variables, database connection, and run migrations
+	initializers.Init()
 
-	r.Get("/api/chat/history", func(w http.ResponseWriter, r *http.Request) {
-                w.Header().Set("Content-Type", "application/json")
-                if history == nil {
-                        history = []Message{}
-                }
-                json.NewEncoder(w).Encode(history)
-        })
+	// Initialize cache client (Redis or no-op)
+	// Uses helper function from initializers to centralize cache creation logic
+	cacheClient := initializers.GetCacheClient()
 
-	r.Post("/api/chat", func(w http.ResponseWriter, r *http.Request) {
-                w.Header().Set("Content-Type", "application/json")
-                var req ChatRequest
-                if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-                        http.Error(w, err.Error(), http.StatusBadRequest)
-                        return
-                }
+	// Create dependency injection container using Factory Pattern
+	// This initializes all repositories, services, and their dependencies
+	appContainer := container.NewContainer(initializers.DB, cacheClient)
 
-                userMsg := Message{Role: "user", Content: req.Message}
-                history = append(history, userMsg)
+	// Create a Gin router
+	router := gin.New()
 
-                respMsg, err := callOpenAI(history)
-                if err != nil {
-                        log.Printf("OpenAI error: %v", err)
-                        errResp := Message{Role: "assistant", Content: "Sorry, I'm having trouble connecting to the AI."}
-                        json.NewEncoder(w).Encode(errResp)
-                        return
-                }
+	// Add middleware: rate limiter, request logger, and recovery
+	// Rate limiter uses Redis if available, otherwise falls back to in-memory
+	router.Use(middleware.RateLimitMiddlewareWithCache(cacheClient))
+	router.Use(middleware.RequestLogger())
+	router.Use(gin.Recovery())
 
-                history = append(history, respMsg)
-                json.NewEncoder(w).Encode(respMsg)
-        })
+	// Register all routes with dependency injection
+	routes.SetupRoutes(router, appContainer)
 
-        log.Println("Go server listening on :3000")
-        if err := http.ListenAndServe(":3000", r); err != nil {
-                log.Fatalf("Server failed: %v", err)
-        }
-}
+	// Swagger documentation endpoint
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-func callOpenAI(msgs []Message) (Message, error) {
-        apiKey := os.Getenv("AI_INTEGRATIONS_OPENAI_API_KEY")
-        baseURL := os.Getenv("AI_INTEGRATIONS_OPENAI_BASE_URL")
+	// Start server on specified PORT or default to 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-        if baseURL == "" {
-                baseURL = "https://api.openai.com/v1"
-        }
+	// Create HTTP server with router
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
 
-        payload := map[string]interface{}{
-                "model":    "gpt-5.1",
-                "messages": msgs,
-        }
+	// Setup graceful shutdown
+	// Listen for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-        bodyBytes, _ := json.Marshal(payload)
+	// Start server in a goroutine
+	go func() {
+		logger.Log.Info().Str("port", port).Msg("Server is running")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Log.Fatal().Err(err).Msg("Failed to start server")
+		}
+	}()
 
-        req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(bodyBytes))
-        req.Header.Set("Content-Type", "application/json")
-        req.Header.Set("Authorization", "Bearer "+apiKey)
+	// Wait for interrupt signal to gracefully shutdown the server
+	<-quit
+	logger.Log.Info().Msg("Shutting down server...")
 
-        client := &http.Client{Timeout: 60 * time.Second}
-        resp, err := client.Do(req)
-        if err != nil {
-                return Message{}, err
-        }
-        defer resp.Body.Close()
+	// Create context with timeout for graceful shutdown
+	// Give the server 30 seconds to finish handling existing requests
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-        if resp.StatusCode != 200 {
-                b, _ := io.ReadAll(resp.Body)
-                return Message{}, fmt.Errorf("status %d: %s", resp.StatusCode, string(b))
-        }
+	// Shutdown server with timeout
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Log.Error().Err(err).Msg("Server forced to shutdown")
+	} else {
+		logger.Log.Info().Msg("Server shutdown gracefully")
+	}
 
-        var result struct {
-                Choices []struct {
-                        Message Message `json:"message"`
-                } `json:"choices"`
-        }
+	// Cleanup: close Redis connection if it exists
+	initializers.CloseRedis()
 
-        if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-                return Message{}, err
-        }
-
-        if len(result.Choices) == 0 {
-                return Message{}, fmt.Errorf("no choices in response")
-        }
-
-        return result.Choices[0].Message, nil
+	logger.Log.Info().Msg("Server exited")
 }

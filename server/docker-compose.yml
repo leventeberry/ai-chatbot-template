@@ -1,4 +1,5 @@
 services:
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: goapi_db
@@ -21,6 +22,7 @@ services:
     networks:
       - goapi_network
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: goapi_redis
@@ -39,6 +41,7 @@ services:
     networks:
       - goapi_network
 
+  # Redis Commander - Web UI for Redis
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: goapi_redis_commander
@@ -55,6 +58,7 @@ services:
     networks:
       - goapi_network
 
+  # pgAdmin - Web UI for PostgreSQL
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: goapi_pgadmin
@@ -64,8 +68,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@goapi.com
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
@@ -74,9 +78,10 @@ services:
     networks:
       - goapi_network
 
+  # Go API Application
   api:
     build:
-      context: ./server
+      context: .
       dockerfile: Dockerfile
     container_name: goapi_api
     restart: unless-stopped
@@ -90,35 +95,16 @@ services:
       DB_NAME: goapi
       JWT_SECRET: ${JWT_SECRET:-change_this_to_a_secure_random_string_in_production}
       PORT: 8080
+      # Redis configuration
       REDIS_ENABLED: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      WIDGET_AUTH_DISABLED: "true"
-      WIDGET_TOKEN: ${WIDGET_TOKEN}
-      WIDGET_TENANT_ID: ${WIDGET_TENANT_ID}
-      WIDGET_ID: ${WIDGET_ID}
-      AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY}
-      AI_INTEGRATIONS_OPENAI_BASE_URL: ${AI_INTEGRATIONS_OPENAI_BASE_URL}
-      AI_INTEGRATIONS_OPENAI_MODEL: ${AI_INTEGRATIONS_OPENAI_MODEL}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - goapi_network
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      API_BASE_URL: http://api:8080
-    depends_on:
-      - api
-    ports:
-      - "3000:3000"
     networks:
       - goapi_network
 
@@ -133,3 +119,4 @@ volumes:
 networks:
   goapi_network:
     driver: bridge
+

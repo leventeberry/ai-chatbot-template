@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:go": "cd server && go run .",
+    "dev:go": "cd server && AUTH_ENABLED=false DB_DISABLED=true WIDGET_AUTH_DISABLED=true PORT=3000 go run .",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

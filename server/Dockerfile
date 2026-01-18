@@ -1,18 +1,42 @@
-FROM golang:1.22-alpine AS build
+# Build stage
+FROM golang:1.25-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache git
+
+# Set working directory
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Copy go mod files
+COPY go.mod ./
+COPY go.sum* ./
+
+# Download dependencies
 RUN go mod download
 
+# Copy source code
 COPY . .
-RUN go build -o server .
 
-FROM alpine:3.19
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o goapi main.go
 
-WORKDIR /app
-COPY --from=build /app/server /app/server
+# Final stage
+FROM alpine:latest
 
-EXPOSE 3000
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
 
-CMD ["/app/server"]
+WORKDIR /root/
+
+# Copy the binary from builder
+COPY --from=builder /app/goapi .
+
+# Copy swagger docs if they exist
+COPY --from=builder /app/docs ./docs
+
+# Expose port
+EXPOSE 8080
+
+# Run the application
+CMD ["./goapi"]
+

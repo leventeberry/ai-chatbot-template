@@ -21,6 +21,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 The Next.js app proxies `/api/*` requests to the Go server. You can override the
 backend base URL with `API_BASE_URL` when deploying.
 
+`npm run dev:go` starts the GoAPI backend in widget-only mode (no database,
+widget auth disabled) on port 3000.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts)
@@ -28,18 +31,34 @@ to automatically optimize and load Inter + Outfit.
 
 ## Docker
 
-Build and run the full stack:
+Build and run the full stack from the repo root:
 
 ```bash
 docker compose up --build
 ```
 
+Or use the Makefile shortcuts:
+
+```bash
+make docker-up
+make docker-dev
+```
+
 The web app is available at [http://localhost:3000](http://localhost:3000). The
-Go API is exposed at [http://localhost:3001](http://localhost:3001).
+Go API is exposed at [http://localhost:8080](http://localhost:8080).
+
+Admin tools:
+- Redis Commander: [http://localhost:8081](http://localhost:8081) (admin/admin)
+- pgAdmin: [http://localhost:5050](http://localhost:5050) (admin@goapi.com/admin)
 
 Set `AI_INTEGRATIONS_OPENAI_API_KEY` (and optionally
-`AI_INTEGRATIONS_OPENAI_BASE_URL`) in your environment or a `.env` file before
-running Docker so the Go server can reach OpenAI.
+`AI_INTEGRATIONS_OPENAI_BASE_URL` and `AI_INTEGRATIONS_OPENAI_MODEL`) in your
+environment or a `.env` file before running Docker so the Go server can reach
+OpenAI.
+
+Widget auth (Phase 1):
+- Set `WIDGET_AUTH_DISABLED=false` to enforce token auth.
+- Provide `WIDGET_TOKEN`, `WIDGET_TENANT_ID`, and `WIDGET_ID` in the API env.
 
 ## Learn More
 

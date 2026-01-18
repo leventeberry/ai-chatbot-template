@@ -1,0 +1,58 @@
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: builder
+    command: sh -c "go mod download && go run ."
+    working_dir: /app
+    restart: "no"
+    environment:
+      DB_USER: goapi_user
+      DB_PASS: goapi_password
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: goapi
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_a_secure_random_string_in_production}
+      PORT: 8080
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY}
+      AI_INTEGRATIONS_OPENAI_BASE_URL: ${AI_INTEGRATIONS_OPENAI_BASE_URL}
+      AI_INTEGRATIONS_OPENAI_MODEL: ${AI_INTEGRATIONS_OPENAI_MODEL}
+    volumes:
+      - ./server:/app
+      - go_api_mod_cache:/go/pkg/mod
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - goapi_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    environment:
+      API_BASE_URL: http://api:8080
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - goapi_network
+
+volumes:
+  go_api_mod_cache:
+    driver: local
