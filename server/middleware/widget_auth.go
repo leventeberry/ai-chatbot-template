@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"strings"
 
+	"chatbot_api/tokens"
+
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/services"
 )
 
 // WidgetAuthMiddleware validates widget tokens and attaches tenant/widget context.
-func WidgetAuthMiddleware(tokenService services.TokenService) gin.HandlerFunc {
+func WidgetAuthMiddleware(tokenService tokens.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if tokenService == nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Token service not configured"})

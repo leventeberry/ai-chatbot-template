@@ -1,7 +1,7 @@
 package factories
 
 import (
-	"github.com/leventeberry/goapi/repositories"
+	"chatbot_api/repositories"
 	"gorm.io/gorm"
 )
 

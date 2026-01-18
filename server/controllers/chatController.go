@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/services"
 )
 
 type ChatRequest struct {

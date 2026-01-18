@@ -4,16 +4,9 @@ import (
 	"errors"
 	"os"
 	"strings"
+
+	"chatbot_api/tokens"
 )
-
-type TokenClaims struct {
-	TenantID string
-	WidgetID string
-}
-
-type TokenService interface {
-	ValidateToken(token string) (TokenClaims, error)
-}
 
 type envTokenService struct {
 	expectedToken string
@@ -22,7 +15,7 @@ type envTokenService struct {
 	authDisabled  bool
 }
 
-func NewTokenService() TokenService {
+func NewTokenService() tokens.TokenService {
 	authDisabled := strings.ToLower(strings.TrimSpace(os.Getenv("WIDGET_AUTH_DISABLED"))) == "true"
 
 	return &envTokenService{
@@ -33,7 +26,7 @@ func NewTokenService() TokenService {
 	}
 }
 
-func (s *envTokenService) ValidateToken(token string) (TokenClaims, error) {
+func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error) {
 	claims := s.defaultClaims()
 
 	if s.authDisabled {
@@ -41,21 +34,21 @@ func (s *envTokenService) ValidateToken(token string) (TokenClaims, error) {
 	}
 
 	if token == "" {
-		return TokenClaims{}, errors.New("missing bearer token")
+		return tokens.TokenClaims{}, errors.New("missing bearer token")
 	}
 
 	if s.expectedToken == "" {
-		return TokenClaims{}, errors.New("widget token not configured")
+		return tokens.TokenClaims{}, errors.New("widget token not configured")
 	}
 
 	if token != s.expectedToken {
-		return TokenClaims{}, errors.New("invalid widget token")
+		return tokens.TokenClaims{}, errors.New("invalid widget token")
 	}
 
 	return claims, nil
 }
 
-func (s *envTokenService) defaultClaims() TokenClaims {
+func (s *envTokenService) defaultClaims() tokens.TokenClaims {
 	tenantID := s.tenantID
 	if tenantID == "" {
 		tenantID = "dev-tenant"
@@ -66,7 +59,7 @@ func (s *envTokenService) defaultClaims() TokenClaims {
 		widgetID = "dev-widget"
 	}
 
-	return TokenClaims{
+	return tokens.TokenClaims{
 		TenantID: tenantID,
 		WidgetID: widgetID,
 	}

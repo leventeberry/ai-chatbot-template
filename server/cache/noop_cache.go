@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/leventeberry/goapi/models"
+	"chatbot_api/models"
 )
 
 // noOpCache implements Cache interface as a no-op (no operation) cache

@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/container"
-	"github.com/leventeberry/goapi/initializers"
-	"github.com/leventeberry/goapi/routes"
+	"chatbot_api/container"
+	"chatbot_api/initializers"
+	"chatbot_api/routes"
 )
 
 var (

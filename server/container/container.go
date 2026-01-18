@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/leventeberry/goapi/cache"
-	"github.com/leventeberry/goapi/factories"
-	"github.com/leventeberry/goapi/repositories"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/cache"
+	"chatbot_api/factories"
+	"chatbot_api/repositories"
+	"chatbot_api/services"
+	"chatbot_api/tokens"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +20,7 @@ type Container struct {
 	UserService       services.UserService
 	AuthService       services.AuthService
 	ChatService       services.ChatService
-	TokenService      services.TokenService
+	TokenService      tokens.TokenService
 }
 
 // NewContainer creates and initializes a new dependency injection container

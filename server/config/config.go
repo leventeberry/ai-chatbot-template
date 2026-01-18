@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/leventeberry/goapi/logger"
+	"chatbot_api/logger"
 )
 
 // Config holds all application configuration

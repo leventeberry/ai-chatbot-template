@@ -3,9 +3,9 @@ package services
 import (
 	"fmt"
 
-	"github.com/leventeberry/goapi/middleware"
-	"github.com/leventeberry/goapi/models"
-	"github.com/leventeberry/goapi/repositories"
+	"chatbot_api/middleware"
+	"chatbot_api/models"
+	"chatbot_api/repositories"
 )
 
 // authService implements AuthService interface

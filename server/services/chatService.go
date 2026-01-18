@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leventeberry/goapi/logger"
+	"chatbot_api/logger"
 )
 
 type ChatMessage struct {

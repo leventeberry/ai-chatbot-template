@@ -1,9 +1,10 @@
 package factories
 
 import (
-	"github.com/leventeberry/goapi/cache"
-	"github.com/leventeberry/goapi/repositories"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/cache"
+	"chatbot_api/repositories"
+	"chatbot_api/services"
+	"chatbot_api/tokens"
 )
 
 // ServiceFactory creates service instances
@@ -37,6 +38,6 @@ func (f *ServiceFactory) CreateChatService() services.ChatService {
 }
 
 // CreateTokenService creates a TokenService instance
-func (f *ServiceFactory) CreateTokenService() services.TokenService {
+func (f *ServiceFactory) CreateTokenService() tokens.TokenService {
 	return services.NewTokenService()
 }

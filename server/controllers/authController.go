@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/middleware"
-	"github.com/leventeberry/goapi/models"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/middleware"
+	"chatbot_api/models"
+	"chatbot_api/services"
 )
 
 // RequestUserInput holds login credentials

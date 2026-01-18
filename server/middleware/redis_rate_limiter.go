@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/leventeberry/goapi/cache"
+	"chatbot_api/cache"
 )
 
 // RedisRateLimiter implements rate limiting using Redis

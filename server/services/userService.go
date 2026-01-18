@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leventeberry/goapi/cache"
-	"github.com/leventeberry/goapi/logger"
-	"github.com/leventeberry/goapi/middleware"
-	"github.com/leventeberry/goapi/models"
-	"github.com/leventeberry/goapi/repositories"
+	"chatbot_api/cache"
+	"chatbot_api/logger"
+	"chatbot_api/middleware"
+	"chatbot_api/models"
+	"chatbot_api/repositories"
 )
 
 // userService implements UserService interface

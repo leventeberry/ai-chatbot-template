@@ -10,7 +10,7 @@ import (
     "github.com/golang-jwt/jwt/v5"
     "github.com/google/uuid"
     "golang.org/x/crypto/bcrypt"
-    "github.com/leventeberry/goapi/config"
+	"chatbot_api/config"
 )
 
 // getTokenExpirationDays returns the JWT token expiration days from configuration

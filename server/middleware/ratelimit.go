@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/cache"
-	"github.com/leventeberry/goapi/config"
+	"chatbot_api/cache"
+	"chatbot_api/config"
 )
 
 // RateLimiterConfig holds configuration for rate limiting

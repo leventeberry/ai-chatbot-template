@@ -1,6 +1,6 @@
 package repositories
 
-import "github.com/leventeberry/goapi/models"
+import "chatbot_api/models"
 
 // UserRepository defines the interface for user data operations
 type UserRepository interface {

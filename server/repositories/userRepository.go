@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leventeberry/goapi/models"
+	"chatbot_api/models"
 	"gorm.io/gorm"
 )
 

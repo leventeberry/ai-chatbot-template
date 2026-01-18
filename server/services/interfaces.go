@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/leventeberry/goapi/models"
-	"github.com/leventeberry/goapi/middleware"
+	"chatbot_api/models"
+	"chatbot_api/middleware"
 )
 
 // UserService defines the interface for user business logic

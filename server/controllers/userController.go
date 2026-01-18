@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/models"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/models"
+	"chatbot_api/services"
 )
 // CreateUserInput holds the data for creating a new user
 type CreateUserInput struct {

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/services"
+	"chatbot_api/services"
 )
 
 // handleServiceError converts service errors to appropriate HTTP responses

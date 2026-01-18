@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/leventeberry/goapi/models"
+	"chatbot_api/models"
 )
 
 // Cache defines the interface for cache operations

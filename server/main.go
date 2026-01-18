@@ -8,13 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	"chatbot_api/container"
+	"chatbot_api/docs"
+	"chatbot_api/initializers"
+	"chatbot_api/logger"
+	"chatbot_api/middleware"
+	"chatbot_api/routes"
+
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/container"
-	"github.com/leventeberry/goapi/docs"
-	"github.com/leventeberry/goapi/initializers"
-	"github.com/leventeberry/goapi/logger"
-	"github.com/leventeberry/goapi/middleware"
-	"github.com/leventeberry/goapi/routes"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )

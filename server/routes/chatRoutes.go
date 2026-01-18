@@ -2,9 +2,9 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/container"
-	"github.com/leventeberry/goapi/controllers"
-	"github.com/leventeberry/goapi/middleware"
+	"chatbot_api/container"
+	"chatbot_api/controllers"
+	"chatbot_api/middleware"
 )
 
 // SetupChatRoutes registers widget chat endpoints under /api.

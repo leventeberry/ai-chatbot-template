@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/container"
-	"github.com/leventeberry/goapi/controllers"
+	"chatbot_api/container"
+	"chatbot_api/controllers"
 )
 
 // SetupRoutes registers all application routes on the provided Gin engine

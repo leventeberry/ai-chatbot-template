@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/leventeberry/goapi/models"
+	"chatbot_api/models"
 	"github.com/redis/go-redis/v9"
 )
 

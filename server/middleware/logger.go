@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leventeberry/goapi/logger"
+	"chatbot_api/logger"
 )
 
 // RequestLogger returns a middleware that logs HTTP requests with details.
