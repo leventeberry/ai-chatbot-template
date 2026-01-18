@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ type SignupResponse = LoginResponse;
 const AUTH_TOKEN_KEY = "auth_token";
 
 export function LoginDialog() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [firstName, setFirstName] = useState("");
@@ -103,6 +105,8 @@ export function LoginDialog() {
         setLastName("");
         setPhoneNumber("");
       }
+      setIsOpen(false);
+      router.push("/dashboard");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unable to log in.";

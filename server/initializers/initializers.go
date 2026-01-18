@@ -9,6 +9,7 @@ import (
 	"chatbot_api/config"
 	"chatbot_api/logger"
 	"chatbot_api/models"
+
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
