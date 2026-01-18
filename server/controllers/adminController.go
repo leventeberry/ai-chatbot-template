@@ -27,6 +27,12 @@ type CreateWidgetTokenRequest struct {
 	Name string `json:"name"`
 }
 
+type UpdateWidgetRequest struct {
+	Name           *string `json:"name"`
+	AllowedOrigins *string `json:"allowed_origins"`
+	Config         *string `json:"config"`
+}
+
 type WidgetTokenResponse struct {
 	Token string `json:"token"`
 }
@@ -92,6 +98,62 @@ func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusCreated, widget)
+	}
+}
+
+// UpdateWidget updates widget configuration fields.
+// @Summary      Update widget
+// @Description  Updates widget name, allowed origins, or config
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string               true  "Widget ID"
+// @Param        request  body      UpdateWidgetRequest  true  "Widget updates"
+// @Success      200      {object}  models.Widget
+// @Failure      400      {object}  map[string]string
+// @Failure      401      {object}  map[string]string
+// @Failure      404      {object}  map[string]string
+// @Router       /api/admin/widgets/{id} [patch]
+func UpdateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		widgetID := c.Param("id")
+		if widgetID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "widget id is required"})
+			return
+		}
+
+		var input UpdateWidgetRequest
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+			return
+		}
+
+		widget, err := widgetRepo.FindByID(widgetID)
+		if err != nil {
+			if err == repositories.ErrWidgetNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "widget not found"})
+				return
+			}
+			handleServiceError(c, err)
+			return
+		}
+
+		if input.Name != nil {
+			widget.Name = *input.Name
+		}
+		if input.AllowedOrigins != nil {
+			widget.AllowedOrigins = *input.AllowedOrigins
+		}
+		if input.Config != nil {
+			widget.Config = *input.Config
+		}
+
+		if err := widgetRepo.Update(widget); err != nil {
+			handleServiceError(c, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, widget)
 	}
 }
 

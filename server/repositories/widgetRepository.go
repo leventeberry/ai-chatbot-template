@@ -27,6 +27,13 @@ func (r *widgetRepository) Create(widget *models.Widget) error {
 	return nil
 }
 
+func (r *widgetRepository) Update(widget *models.Widget) error {
+	if err := r.db.Model(widget).Updates(widget).Error; err != nil {
+		return fmt.Errorf("failed to update widget %s: %w", widget.ID, err)
+	}
+	return nil
+}
+
 func (r *widgetRepository) FindByID(id string) (*models.Widget, error) {
 	var widget models.Widget
 	err := r.db.First(&widget, "id = ?", id).Error

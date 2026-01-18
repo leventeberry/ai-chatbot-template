@@ -50,6 +50,7 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 		{
 			admin.POST("/tenants", controllers.CreateTenant(c.TenantRepository))
 			admin.POST("/widgets", controllers.CreateWidget(c.WidgetRepository))
+			admin.PATCH("/widgets/:id", controllers.UpdateWidget(c.WidgetRepository))
 			admin.POST("/widgets/:id/tokens", controllers.CreateWidgetToken(c.WidgetRepository, c.ApiKeyRepository))
 		}
 	}
