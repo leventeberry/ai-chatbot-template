@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Bot,
@@ -26,9 +26,17 @@ type WidgetConfig = {
   config: string;
 };
 
+type WidgetTheme = {
+  headerBackground?: string;
+  headerText?: string;
+  buttonBackground?: string;
+  buttonText?: string;
+};
+
 const FALLBACK_ERROR_MESSAGE =
   "Sorry, I'm having trouble connecting to the AI.";
 const HISTORY_CACHE_KEY = "chatbot-history";
+const WIDGET_CONFIG_CACHE_KEY = "chatbot-widget-config";
 const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
 const DEFAULT_WIDGET_TITLE = "AI Assistant";
 
@@ -37,6 +45,7 @@ export function ChatWidget() {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [widgetTitle, setWidgetTitle] = useState(DEFAULT_WIDGET_TITLE);
+  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [showHistorySync, setShowHistorySync] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -53,6 +62,13 @@ export function ChatWidget() {
     if (!isOpen) return;
 
     const loadConfig = async () => {
+      const cached = getCachedWidgetConfig();
+      if (cached) {
+        const parsed = resolveWidgetConfig(cached);
+        setWidgetTitle(parsed.title);
+        setWidgetTheme(parsed.theme);
+      }
+
       try {
         const res = await fetch("/api/widget/config", {
           headers: WIDGET_AUTH_TOKEN
@@ -61,10 +77,13 @@ export function ChatWidget() {
         });
         if (!res.ok) throw new Error("Failed to fetch widget config.");
         const data = (await res.json()) as WidgetConfig;
-        const title = resolveWidgetTitle(data);
-        setWidgetTitle(title);
+        cacheWidgetConfig(data);
+        const parsed = resolveWidgetConfig(data);
+        setWidgetTitle(parsed.title);
+        setWidgetTheme(parsed.theme);
       } catch {
         setWidgetTitle(DEFAULT_WIDGET_TITLE);
+        setWidgetTheme(null);
       }
     };
 
@@ -233,7 +252,10 @@ export function ChatWidget() {
             transition={{ duration: 0.2 }}
             className="w-[380px] h-[600px] max-h-[80vh] bg-background border border-border/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-primary to-purple-600 p-4 flex items-center justify-between shrink-0">
+            <div
+              className="bg-gradient-to-r from-primary to-purple-600 p-4 flex items-center justify-between shrink-0"
+              style={resolveHeaderStyle(widgetTheme)}
+            >
               <div className="flex items-center gap-3 text-primary-foreground">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
                   <Bot className="w-6 h-6" />
@@ -389,6 +411,7 @@ export function ChatWidget() {
             ? "bg-muted text-foreground hover:bg-muted/80"
             : "bg-primary text-primary-foreground hover:bg-primary/90"
         )}
+        style={resolveButtonStyle(widgetTheme)}
         aria-label={isOpen ? "Close chat widget" : "Open chat widget"}
       >
         <AnimatePresence mode="wait">
@@ -432,4 +455,57 @@ function resolveWidgetTitle(config: WidgetConfig): string {
   }
 
   return config?.name || DEFAULT_WIDGET_TITLE;
+}
+
+function resolveWidgetConfig(config: WidgetConfig): {
+  title: string;
+  theme: WidgetTheme | null;
+} {
+  const title = resolveWidgetTitle(config);
+  const raw = config?.config ?? "";
+  if (!raw.trim()) {
+    return { title, theme: null };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { theme?: WidgetTheme };
+    return { title, theme: parsed?.theme ?? null };
+  } catch {
+    return { title, theme: null };
+  }
+}
+
+function getCachedWidgetConfig(): WidgetConfig | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(WIDGET_CONFIG_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as WidgetConfig;
+  } catch {
+    localStorage.removeItem(WIDGET_CONFIG_CACHE_KEY);
+    return null;
+  }
+}
+
+function cacheWidgetConfig(config: WidgetConfig) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(WIDGET_CONFIG_CACHE_KEY, JSON.stringify(config));
+}
+
+function resolveHeaderStyle(theme: WidgetTheme | null): CSSProperties | undefined {
+  if (!theme) return undefined;
+  if (!theme.headerBackground && !theme.headerText) return undefined;
+  return {
+    background: theme.headerBackground,
+    color: theme.headerText,
+  };
+}
+
+function resolveButtonStyle(theme: WidgetTheme | null): CSSProperties | undefined {
+  if (!theme) return undefined;
+  if (!theme.buttonBackground && !theme.buttonText) return undefined;
+  return {
+    background: theme.buttonBackground,
+    color: theme.buttonText,
+  };
 }
