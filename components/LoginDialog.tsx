@@ -27,6 +27,7 @@ type SignupResponse = LoginResponse;
 const AUTH_TOKEN_KEY = "auth_token";
 
 export function LoginDialog() {
+  const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -36,6 +37,16 @@ export function LoginDialog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setMode("login");
+      setError(null);
+      setSuccessMessage(null);
+      setPassword("");
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,7 +81,11 @@ export function LoginDialog() {
         | SignupResponse
         | { error?: string };
       if (!res.ok) {
-        throw new Error(data.error || "Login failed.");
+        const message =
+          data && typeof data === "object" && "error" in data
+            ? data.error
+            : null;
+        throw new Error(message || "Login failed.");
       }
 
       if (data && "token" in data) {
@@ -98,7 +113,7 @@ export function LoginDialog() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger className="text-sm font-medium text-muted-foreground hover:text-foreground">
         Log in
       </DialogTrigger>

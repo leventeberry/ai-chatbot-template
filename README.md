@@ -44,6 +44,16 @@ make docker-up
 make docker-dev
 ```
 
+The root `Makefile` also includes GoAPI helpers (run from repo root):
+
+```bash
+make install
+make run
+make build
+make test
+make swagger
+```
+
 The web app is available at [http://localhost:3000](http://localhost:3000). The
 Go API is exposed at [http://localhost:8080](http://localhost:8080).
 

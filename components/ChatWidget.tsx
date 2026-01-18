@@ -246,11 +246,11 @@ export function ChatWidget() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="w-[380px] h-[600px] max-h-[80vh] bg-background border border-border/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed inset-0 w-full h-full bg-background border border-border/50 shadow-2xl flex flex-col overflow-hidden md:static md:w-[380px] md:h-[600px] md:max-h-[80vh] md:rounded-2xl"
           >
             <div
               className="bg-gradient-to-r from-primary to-purple-600 p-4 flex items-center justify-between shrink-0"

@@ -83,7 +83,6 @@ goapi/
 ├── schema.sql          # Database schema reference
 ├── Dockerfile          # Docker image definition
 ├── docker-compose.yml  # Docker Compose configuration
-├── Makefile           # Build automation and common tasks
 ├── main.go            # Application entry point
 ├── go.mod             # Go module dependencies
 ├── go.sum             # Go module checksums
@@ -111,13 +110,6 @@ goapi/
    ```
 
 2. **Install dependencies**
-   
-   Using Make (recommended):
-   ```bash
-   make install
-   ```
-   
-   Or manually:
    ```bash
    go mod download
    go mod tidy
@@ -162,13 +154,6 @@ goapi/
    - If Redis is not available, the application will gracefully degrade to in-memory caching
 
 6. **Run the application**
-   
-   Using Make (recommended):
-   ```bash
-   make run
-   ```
-   
-   Or manually:
    ```bash
    go run main.go
    ```
@@ -176,67 +161,25 @@ goapi/
    The server will start on `http://localhost:8080` (or the port specified in `PORT` environment variable).
 
 7. **Generate Swagger documentation** (if you modify API endpoints)
-   
-   Using Make (recommended):
-   ```bash
-   make swagger
-   ```
-   
-   Or manually:
    ```bash
    # Install swag CLI tool
    go install github.com/swaggo/swag/cmd/swag@latest
-   
+
    # Generate Swagger docs from annotations
    swag init
    ```
 
-## Makefile Commands
+## Docker Makefile Commands (repo root)
 
-This project includes a Makefile with convenient commands for common tasks. Run `make help` to see all available commands.
-
-### Quick Start Commands
+Docker helper commands live in the repo root `Makefile`:
 
 ```bash
-# Show all available commands
-make help
-
-# Full setup (install deps + generate Swagger docs)
-make setup
-
-# Run locally
-make run
-
-# Start with Docker
+make docker-dev
+make docker-dev-build
 make docker-up
-
-# View Docker logs
-make docker-logs-api
+make docker-down
+make docker-logs
 ```
-
-### Common Commands
-
-**Local Development:**
-- `make install` or `make deps` - Install Go dependencies
-- `make run` - Run the application locally
-- `make build` - Build the application binary
-- `make test` - Run tests
-- `make test-coverage` - Run tests with coverage report
-- `make clean` - Clean build artifacts (binary, coverage files)
-
-**Docker:**
-- `make docker-build` - Build Docker images
-- `make docker-up` - Start Docker containers in detached mode
-- `make docker-down` - Stop Docker containers
-- `make docker-down-volumes` - Stop containers and remove volumes (clears database)
-- `make docker-logs` - View all container logs (follow mode)
-- `make docker-logs-api` - View API container logs only
-- `make docker-logs-db` - View database container logs only
-- `make docker-logs-redis` - View Redis container logs only
-- `make docker-restart` - Restart Docker containers
-- `make docker-rebuild` - Rebuild and restart containers
-- `make docker-ps` - Show running Docker containers
-- `make docker-shell-api` - Open shell in API container
 - `make docker-shell-db` - Open PostgreSQL shell in database container
 - `make docker-shell-redis` - Open Redis CLI in Redis container
 - `make docker-open-redis-commander` - Open Redis Commander web UI in browser
