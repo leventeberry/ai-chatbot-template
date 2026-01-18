@@ -20,6 +20,13 @@ func NewWidgetRepository(db *gorm.DB) WidgetRepository {
 	}
 }
 
+func (r *widgetRepository) Create(widget *models.Widget) error {
+	if err := r.db.Create(widget).Error; err != nil {
+		return fmt.Errorf("failed to create widget: %w", err)
+	}
+	return nil
+}
+
 func (r *widgetRepository) FindByID(id string) (*models.Widget, error) {
 	var widget models.Widget
 	err := r.db.First(&widget, "id = ?", id).Error

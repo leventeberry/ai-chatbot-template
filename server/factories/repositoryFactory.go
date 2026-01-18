@@ -37,3 +37,13 @@ func (f *RepositoryFactory) CreateMessageRepository() repositories.MessageReposi
 func (f *RepositoryFactory) CreateWidgetRepository() repositories.WidgetRepository {
 	return repositories.NewWidgetRepository(f.db)
 }
+
+// CreateTenantRepository creates a TenantRepository instance
+func (f *RepositoryFactory) CreateTenantRepository() repositories.TenantRepository {
+	return repositories.NewTenantRepository(f.db)
+}
+
+// CreateApiKeyRepository creates an ApiKeyRepository instance
+func (f *RepositoryFactory) CreateApiKeyRepository() repositories.ApiKeyRepository {
+	return repositories.NewApiKeyRepository(f.db)
+}

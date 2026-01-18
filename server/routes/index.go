@@ -6,9 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"chatbot_api/container"
 	"chatbot_api/controllers"
+	"chatbot_api/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 // SetupRoutes registers all application routes on the provided Gin engine
@@ -42,6 +43,16 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 
 	// Widget chat endpoints
 	SetupChatRoutes(router, c)
+
+	if c.DB != nil {
+		admin := router.Group("/api/admin")
+		admin.Use(middleware.AdminAuthMiddleware())
+		{
+			admin.POST("/tenants", controllers.CreateTenant(c.TenantRepository))
+			admin.POST("/widgets", controllers.CreateWidget(c.WidgetRepository))
+			admin.POST("/widgets/:id/tokens", controllers.CreateWidgetToken(c.WidgetRepository, c.ApiKeyRepository))
+		}
+	}
 
 	// API v1 routes group
 	// All API endpoints are versioned under /api/v1 for backward compatibility

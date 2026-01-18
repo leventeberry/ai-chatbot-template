@@ -30,4 +30,16 @@ type MessageRepository interface {
 // WidgetRepository defines the interface for widget operations
 type WidgetRepository interface {
 	FindByID(id string) (*models.Widget, error)
+	Create(widget *models.Widget) error
+}
+
+// TenantRepository defines the interface for tenant operations
+type TenantRepository interface {
+	FindByID(id string) (*models.Tenant, error)
+	Create(tenant *models.Tenant) error
+}
+
+// ApiKeyRepository defines the interface for widget API keys
+type ApiKeyRepository interface {
+	Create(apiKey *models.ApiKey) error
 }

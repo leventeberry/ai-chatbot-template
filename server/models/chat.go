@@ -25,6 +25,15 @@ type Widget struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type ApiKey struct {
+	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
+	TenantID  string    `gorm:"type:uuid;index;not null" json:"tenant_id"`
+	WidgetID  string    `gorm:"type:uuid;index;not null" json:"widget_id"`
+	HashedKey string    `gorm:"not null" json:"-"`
+	Name      string    `gorm:"not null" json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Conversation struct {
 	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
 	TenantID  string    `gorm:"type:uuid;index;not null" json:"tenant_id"`
@@ -68,6 +77,13 @@ func (c *Conversation) BeforeCreate(_ *gorm.DB) error {
 func (m *Message) BeforeCreate(_ *gorm.DB) error {
 	if m.ID == "" {
 		m.ID = uuid.NewString()
+	}
+	return nil
+}
+
+func (a *ApiKey) BeforeCreate(_ *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = uuid.NewString()
 	}
 	return nil
 }

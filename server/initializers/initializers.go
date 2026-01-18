@@ -104,6 +104,7 @@ func migrateDB() {
 		&models.User{},
 		&models.Tenant{},
 		&models.Widget{},
+		&models.ApiKey{},
 		&models.Conversation{},
 		&models.Message{},
 		// add future models here, e.g. &controllers.Profile{}, &controllers.Order{},

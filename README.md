@@ -59,6 +59,8 @@ OpenAI.
 Widget auth (Phase 1):
 - Set `WIDGET_AUTH_DISABLED=false` to enforce token auth.
 - Provide `WIDGET_TOKEN`, `WIDGET_TENANT_ID`, and `WIDGET_ID` in the API env.
+Admin provisioning (Phase 5):
+- Set `ADMIN_TOKEN` and pass it in `X-Admin-Token` for `/api/admin/*`.
 
 ## Learn More
 
