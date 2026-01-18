@@ -32,12 +32,6 @@ func NewTokenService(apiKeyRepo repositories.ApiKeyRepository) tokens.TokenServi
 }
 
 func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error) {
-	claims := s.defaultClaims()
-
-	if s.authDisabled {
-		return claims, nil
-	}
-
 	if token == "" {
 		return tokens.TokenClaims{}, errors.New("missing bearer token")
 	}
@@ -46,6 +40,9 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 		hashed := sha256.Sum256([]byte(token))
 		apiKey, err := s.apiKeyRepo.FindByHashedKey(hex.EncodeToString(hashed[:]))
 		if err != nil {
+			if s.authDisabled {
+				return s.defaultClaims(), nil
+			}
 			return tokens.TokenClaims{}, errors.New("invalid widget token")
 		}
 
@@ -53,6 +50,10 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 			TenantID: apiKey.TenantID,
 			WidgetID: apiKey.WidgetID,
 		}, nil
+	}
+
+	if s.authDisabled {
+		return s.defaultClaims(), nil
 	}
 
 	if s.expectedToken == "" {
@@ -63,7 +64,7 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 		return tokens.TokenClaims{}, errors.New("invalid widget token")
 	}
 
-	return claims, nil
+	return s.defaultClaims(), nil
 }
 
 func (s *envTokenService) defaultClaims() tokens.TokenClaims {
