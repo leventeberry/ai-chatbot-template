@@ -1,24 +1,29 @@
 package services
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"os"
 	"strings"
 
+	"chatbot_api/repositories"
 	"chatbot_api/tokens"
 )
 
 type envTokenService struct {
+	apiKeyRepo    repositories.ApiKeyRepository
 	expectedToken string
 	tenantID      string
 	widgetID      string
 	authDisabled  bool
 }
 
-func NewTokenService() tokens.TokenService {
+func NewTokenService(apiKeyRepo repositories.ApiKeyRepository) tokens.TokenService {
 	authDisabled := strings.ToLower(strings.TrimSpace(os.Getenv("WIDGET_AUTH_DISABLED"))) == "true"
 
 	return &envTokenService{
+		apiKeyRepo:    apiKeyRepo,
 		expectedToken: strings.TrimSpace(os.Getenv("WIDGET_TOKEN")),
 		tenantID:      strings.TrimSpace(os.Getenv("WIDGET_TENANT_ID")),
 		widgetID:      strings.TrimSpace(os.Getenv("WIDGET_ID")),
@@ -35,6 +40,19 @@ func (s *envTokenService) ValidateToken(token string) (tokens.TokenClaims, error
 
 	if token == "" {
 		return tokens.TokenClaims{}, errors.New("missing bearer token")
+	}
+
+	if s.apiKeyRepo != nil {
+		hashed := sha256.Sum256([]byte(token))
+		apiKey, err := s.apiKeyRepo.FindByHashedKey(hex.EncodeToString(hashed[:]))
+		if err != nil {
+			return tokens.TokenClaims{}, errors.New("invalid widget token")
+		}
+
+		return tokens.TokenClaims{
+			TenantID: apiKey.TenantID,
+			WidgetID: apiKey.WidgetID,
+		}, nil
 	}
 
 	if s.expectedToken == "" {

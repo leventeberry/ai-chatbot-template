@@ -13,6 +13,7 @@ type ServiceFactory struct {
 	userRepo         repositories.UserRepository
 	conversationRepo repositories.ConversationRepository
 	messageRepo      repositories.MessageRepository
+	apiKeyRepo       repositories.ApiKeyRepository
 	cache            cache.Cache
 }
 
@@ -21,12 +22,14 @@ func NewServiceFactory(
 	userRepo repositories.UserRepository,
 	conversationRepo repositories.ConversationRepository,
 	messageRepo repositories.MessageRepository,
+	apiKeyRepo repositories.ApiKeyRepository,
 	cacheClient cache.Cache,
 ) *ServiceFactory {
 	return &ServiceFactory{
 		userRepo:         userRepo,
 		conversationRepo: conversationRepo,
 		messageRepo:      messageRepo,
+		apiKeyRepo:       apiKeyRepo,
 		cache:            cacheClient,
 	}
 }
@@ -48,5 +51,5 @@ func (f *ServiceFactory) CreateChatService() services.ChatService {
 
 // CreateTokenService creates a TokenService instance
 func (f *ServiceFactory) CreateTokenService() tokens.TokenService {
-	return services.NewTokenService()
+	return services.NewTokenService(f.apiKeyRepo)
 }

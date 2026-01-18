@@ -42,4 +42,5 @@ type TenantRepository interface {
 // ApiKeyRepository defines the interface for widget API keys
 type ApiKeyRepository interface {
 	Create(apiKey *models.ApiKey) error
+	FindByHashedKey(hashedKey string) (*models.ApiKey, error)
 }

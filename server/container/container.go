@@ -50,11 +50,11 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		widgetRepo = repoFactory.CreateWidgetRepository()
 		tenantRepo = repoFactory.CreateTenantRepository()
 		apiKeyRepo = repoFactory.CreateApiKeyRepository()
-		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, cacheClient)
+		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, apiKeyRepo, cacheClient)
 		userService = serviceFactory.CreateUserService()
 		authService = serviceFactory.CreateAuthService()
 	} else {
-		serviceFactory = factories.NewServiceFactory(nil, nil, nil, cacheClient)
+		serviceFactory = factories.NewServiceFactory(nil, nil, nil, nil, cacheClient)
 	}
 
 	chatService := serviceFactory.CreateChatService()

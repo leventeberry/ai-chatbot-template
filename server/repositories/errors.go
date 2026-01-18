@@ -9,4 +9,5 @@ var (
 	ErrConversationNotFound = errors.New("conversation not found")
 	ErrWidgetNotFound       = errors.New("widget not found")
 	ErrTenantNotFound       = errors.New("tenant not found")
+	ErrApiKeyNotFound       = errors.New("api key not found")
 )
