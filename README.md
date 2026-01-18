@@ -26,6 +26,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts)
 to automatically optimize and load Inter + Outfit.
 
+## Docker
+
+Build and run the full stack:
+
+```bash
+docker compose up --build
+```
+
+The web app is available at [http://localhost:3000](http://localhost:3000). The
+Go API is exposed at [http://localhost:3001](http://localhost:3001).
+
+Set `AI_INTEGRATIONS_OPENAI_API_KEY` (and optionally
+`AI_INTEGRATIONS_OPENAI_BASE_URL`) in your environment or a `.env` file before
+running Docker so the Go server can reach OpenAI.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 'use client';
 
 import {
@@ -23,7 +24,7 @@ const TRANSITION = {
   type: 'spring',
   bounce: 0.1,
   duration: 0.4,
-};
+} satisfies Transition;
 
 type MorphingPopoverContextValue = {
   isOpen: boolean;

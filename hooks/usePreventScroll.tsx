@@ -49,7 +49,6 @@ function chain(
   };
 }
 
-// @ts-expect-error -- visualViewport is not in lib.dom typings in some setups.
 const visualViewport = typeof document !== 'undefined' && window.visualViewport;
 
 export function isScrollable(node: Element): boolean {
@@ -146,7 +145,8 @@ export function usePreventScroll(options: PreventScrollOptions = {}) {
 function preventScrollMobileSafari() {
   let scrollable: Element;
   let lastY = 0;
-  const onTouchStart = (e: TouchEvent) => {
+  const onTouchStart: EventListener = (event) => {
+    const e = event as TouchEvent;
     // Store the nearest scrollable parent element from the element that the user touched.
     scrollable = getScrollParent(e.target as Element);
     if (
@@ -159,7 +159,8 @@ function preventScrollMobileSafari() {
     lastY = e.changedTouches[0].pageY;
   };
 
-  const onTouchMove = (e: TouchEvent) => {
+  const onTouchMove: EventListener = (event) => {
+    const e = event as TouchEvent;
     // Prevent scrolling the window.
     if (
       !scrollable ||
@@ -189,7 +190,8 @@ function preventScrollMobileSafari() {
     lastY = y;
   };
 
-  const onTouchEnd = (e: TouchEvent) => {
+  const onTouchEnd: EventListener = (event) => {
+    const e = event as TouchEvent;
     const target = e.target as HTMLElement;
 
     // Apply this change if we're not already focused on the target element
@@ -207,7 +209,8 @@ function preventScrollMobileSafari() {
     }
   };
 
-  const onFocus = (e: FocusEvent) => {
+  const onFocus: EventListener = (event) => {
+    const e = event as FocusEvent;
     const target = e.target as HTMLElement;
     if (isInput(target)) {
       // Transform also needs to be applied in the focus event in cases where focus moves
@@ -309,10 +312,10 @@ function setStyle(
 }
 
 // Adds an event listener to an element, and returns a function to remove it.
-function addEvent<K extends keyof GlobalEventHandlersEventMap>(
+function addEvent(
   target: EventTarget,
-  event: K,
-  handler: (this: Document, ev: GlobalEventHandlersEventMap[K]) => void,
+  event: string,
+  handler: EventListenerOrEventListenerObject,
   options?: boolean | AddEventListenerOptions
 ) {
   target.addEventListener(event, handler, options);
