@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -74,7 +75,8 @@ func SendChatMessage(chatService services.ChatService) gin.HandlerFunc {
 		defer cancel()
 
 		sessionID := normalizeSessionID(input.SessionID)
-		resp := chatService.SendMessage(ctx, tenantID, widgetID, sessionID, input.Message)
+		origin := resolveRequestOrigin(c)
+		resp := chatService.SendMessage(ctx, tenantID, widgetID, sessionID, origin, input.Message)
 		c.JSON(http.StatusOK, resp)
 	}
 }
@@ -111,4 +113,21 @@ func normalizeSessionID(sessionID string) string {
 		return "default"
 	}
 	return trimmed
+}
+
+func resolveRequestOrigin(c *gin.Context) string {
+	origin := strings.TrimSpace(c.GetHeader("Origin"))
+	if origin != "" {
+		return origin
+	}
+
+	referer := strings.TrimSpace(c.GetHeader("Referer"))
+	if referer == "" {
+		return ""
+	}
+	parsed, err := url.Parse(referer)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(parsed.Scheme + "://" + parsed.Host)
 }

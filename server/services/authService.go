@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 
 	"chatbot_api/middleware"
 	"chatbot_api/models"
@@ -10,14 +11,22 @@ import (
 
 // authService implements AuthService interface
 type authService struct {
-	userRepo repositories.UserRepository
+	userRepo   repositories.UserRepository
+	tenantRepo repositories.TenantRepository
+	widgetRepo repositories.WidgetRepository
 }
 
 // NewAuthService creates a new instance of AuthService
 // Factory function for creating auth service
-func NewAuthService(userRepo repositories.UserRepository) AuthService {
+func NewAuthService(
+	userRepo repositories.UserRepository,
+	tenantRepo repositories.TenantRepository,
+	widgetRepo repositories.WidgetRepository,
+) AuthService {
 	return &authService{
-		userRepo: userRepo,
+		userRepo:   userRepo,
+		tenantRepo: tenantRepo,
+		widgetRepo: widgetRepo,
 	}
 }
 
@@ -29,8 +38,12 @@ func (s *authService) Login(email, password string) (*models.User, *middleware.A
 		return nil, nil, err
 	}
 
+	if err := s.ensureUserTenantWidget(user); err != nil {
+		return nil, nil, err
+	}
+
 	// Generate JWT token with user role
-	token, err := middleware.CreateToken(user.ID, user.Role)
+	token, err := middleware.CreateToken(user.ID, user.Role, user.TenantID, user.WidgetID)
 	if err != nil {
 		return nil, nil, ErrTokenGeneration
 	}
@@ -40,6 +53,10 @@ func (s *authService) Login(email, password string) (*models.User, *middleware.A
 
 // Register creates a new user account and returns a JWT token
 func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.Authentication, error) {
+	if s.tenantRepo == nil || s.widgetRepo == nil {
+		return nil, nil, ErrMissingTenantWidget
+	}
+
 	// Create user directly here to avoid circular dependency
 	// In a more advanced setup, we'd use a service orchestrator or composition
 
@@ -70,7 +87,34 @@ func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.
 	}
 
 	// Create user
+	tenantName := strings.TrimSpace(strings.Join([]string{input.FirstName, input.LastName}, " "))
+	if tenantName == "" {
+		tenantName = input.Email
+	}
+
+	tenant := &models.Tenant{Name: tenantName}
+	if err := s.tenantRepo.Create(tenant); err != nil {
+		return nil, nil, fmt.Errorf("failed to create tenant during registration: %w", err)
+	}
+
+	widgetName := strings.TrimSpace(input.FirstName)
+	if widgetName == "" {
+		widgetName = "Default Widget"
+	} else {
+		widgetName = widgetName + "'s Widget"
+	}
+
+	widget := &models.Widget{
+		TenantID: tenant.ID,
+		Name:     widgetName,
+	}
+	if err := s.widgetRepo.Create(widget); err != nil {
+		return nil, nil, fmt.Errorf("failed to create widget during registration: %w", err)
+	}
+
 	user := &models.User{
+		TenantID:  tenant.ID,
+		WidgetID:  widget.ID,
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
@@ -84,12 +128,54 @@ func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.
 	}
 
 	// Generate JWT token with user role
-	token, err := middleware.CreateToken(user.ID, user.Role)
+	token, err := middleware.CreateToken(user.ID, user.Role, user.TenantID, user.WidgetID)
 	if err != nil {
 		return nil, nil, ErrTokenGeneration
 	}
 
 	return user, token, nil
+}
+
+func (s *authService) ensureUserTenantWidget(user *models.User) error {
+	if user.TenantID != "" && user.WidgetID != "" {
+		return nil
+	}
+	if s.tenantRepo == nil || s.widgetRepo == nil {
+		return ErrMissingTenantWidget
+	}
+
+	tenantName := strings.TrimSpace(strings.Join([]string{user.FirstName, user.LastName}, " "))
+	if tenantName == "" {
+		tenantName = user.Email
+	}
+
+	tenant := &models.Tenant{Name: tenantName}
+	if err := s.tenantRepo.Create(tenant); err != nil {
+		return fmt.Errorf("failed to create tenant during login: %w", err)
+	}
+
+	widgetName := strings.TrimSpace(user.FirstName)
+	if widgetName == "" {
+		widgetName = "Default Widget"
+	} else {
+		widgetName = widgetName + "'s Widget"
+	}
+
+	widget := &models.Widget{
+		TenantID: tenant.ID,
+		Name:     widgetName,
+	}
+	if err := s.widgetRepo.Create(widget); err != nil {
+		return fmt.Errorf("failed to create widget during login: %w", err)
+	}
+
+	user.TenantID = tenant.ID
+	user.WidgetID = widget.ID
+	if err := s.userRepo.Update(user); err != nil {
+		return fmt.Errorf("failed to update user tenant/widget: %w", err)
+	}
+
+	return nil
 }
 
 // ValidateCredentials validates user email and password

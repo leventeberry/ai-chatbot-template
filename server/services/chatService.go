@@ -24,7 +24,7 @@ type ChatMessage struct {
 
 type ChatService interface {
 	GetHistory(ctx context.Context, tenantID, widgetID, sessionID string) []ChatMessage
-	SendMessage(ctx context.Context, tenantID, widgetID, sessionID, message string) ChatMessage
+	SendMessage(ctx context.Context, tenantID, widgetID, sessionID, origin, message string) ChatMessage
 }
 
 type chatService struct {
@@ -88,7 +88,7 @@ func (s *chatService) GetHistory(ctx context.Context, tenantID, widgetID, sessio
 	return mapMessages(messages)
 }
 
-func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessionID, message string) ChatMessage {
+func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessionID, origin, message string) ChatMessage {
 	trimmed := strings.TrimSpace(message)
 	if trimmed == "" {
 		return ChatMessage{Role: "assistant", Content: "Message is required."}
@@ -103,11 +103,11 @@ func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessi
 			Role:    "assistant",
 			Content: "AI key is not configured for this deployment.",
 		}
-		s.appendMessageDB(tenantID, widgetID, sessionID, resp)
+		s.appendMessageDB(tenantID, widgetID, sessionID, origin, resp)
 		return resp
 	}
 
-	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID)
+	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID, origin)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("Failed to fetch conversation")
 		return ChatMessage{Role: "assistant", Content: s.fallback}
@@ -130,7 +130,7 @@ func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessi
 		resp = ChatMessage{Role: "assistant", Content: s.fallback}
 	}
 
-	s.appendMessageDB(tenantID, widgetID, sessionID, resp)
+	s.appendMessageDB(tenantID, widgetID, sessionID, origin, resp)
 	return resp
 }
 
@@ -181,8 +181,8 @@ func (s *chatService) appendAssistantInMemory(key string, msg ChatMessage) {
 	s.mu.Unlock()
 }
 
-func (s *chatService) appendMessageDB(tenantID, widgetID, sessionID string, msg ChatMessage) {
-	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID)
+func (s *chatService) appendMessageDB(tenantID, widgetID, sessionID, origin string, msg ChatMessage) {
+	conversation, err := s.conversationRepo.FindOrCreate(tenantID, widgetID, sessionID, origin)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("Failed to fetch conversation for assistant message")
 		return

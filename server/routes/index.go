@@ -51,6 +51,7 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 		{
 			admin.POST("/tenants", controllers.CreateTenant(c.TenantRepository))
 			admin.POST("/widgets", controllers.CreateWidget(c.WidgetRepository))
+			admin.GET("/widgets/:id", controllers.GetWidget(c.WidgetRepository))
 			admin.PATCH("/widgets/:id", controllers.UpdateWidget(c.WidgetRepository))
 			admin.POST("/widgets/:id/tokens", controllers.CreateWidgetToken(c.WidgetRepository, c.ApiKeyRepository))
 			admin.GET("/widgets/:id/tokens", controllers.ListWidgetTokens(c.ApiKeyRepository))
@@ -93,6 +94,35 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 
 			// User routes setup
 			SetupUserRoutes(v1, c)
+		}
+	}
+
+	if authEnabled() && c.AuthService != nil {
+		dashboard := router.Group("/api/dashboard")
+		dashboard.Use(middleware.AuthMiddleware())
+		{
+			widgetGroup := dashboard.Group("/widgets/:id")
+			widgetGroup.Use(middleware.RequireWidgetMatch("id"))
+			{
+				widgetGroup.GET("", controllers.GetWidget(c.WidgetRepository))
+				widgetGroup.PATCH("", controllers.UpdateWidget(c.WidgetRepository))
+				widgetGroup.GET("/tokens", controllers.ListWidgetTokens(c.ApiKeyRepository))
+				widgetGroup.POST("/tokens", controllers.CreateWidgetToken(c.WidgetRepository, c.ApiKeyRepository))
+				widgetGroup.POST("/tokens/rotate", controllers.RotateWidgetTokens(c.WidgetRepository, c.ApiKeyRepository))
+				widgetGroup.DELETE("/tokens/:tokenId", controllers.RevokeWidgetToken(c.ApiKeyRepository))
+				widgetGroup.GET("/analytics", controllers.GetWidgetAnalytics(
+					c.WidgetRepository,
+					c.ConversationRepository,
+					c.MessageRepository,
+					c.ApiKeyRepository,
+				))
+				widgetGroup.GET("/conversations", controllers.ListWidgetConversations(c.ConversationRepository))
+			}
+
+			dashboard.GET("/conversations/:id/messages", controllers.GetConversationMessages(
+				c.ConversationRepository,
+				c.MessageRepository,
+			))
 		}
 	}
 }

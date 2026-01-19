@@ -1,14 +1,913 @@
+"use client"
+
+import type { ReactNode } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+
+type WidgetConfig = {
+  title?: string
+  theme?: {
+    headerBackground?: string
+    headerText?: string
+    buttonBackground?: string
+    buttonText?: string
+  }
+  branding?: {
+    logoUrl?: string
+    showLogo?: boolean
+    avatarUrl?: string
+  }
+  placement?: {
+    position?: "bottom-right" | "bottom-left"
+    offsetX?: number
+    offsetY?: number
+  }
+  greeting?: {
+    welcomeMessage?: string
+    initialPrompt?: string
+  }
+  behavior?: {
+    openOnLoad?: boolean
+    showOnline?: boolean
+  }
+}
+
+type Widget = {
+  id: string
+  name: string
+  allowed_origins: string
+  config: string
+  updated_at: string
+}
+
+type TokenSummary = {
+  id: string
+  name: string
+  created_at: string
+  last_used_at?: string | null
+}
+
+type Analytics = {
+  widget_id: string
+  messages: { total: number; user: number; assistant: number }
+  sessions: { total: number; today: number }
+  tokens: TokenSummary[]
+  last_chat_at?: string | null
+  per_domain: { origin: string; sessions: number; messages: number }[]
+}
+
+type ConversationSummary = {
+  id: string
+  session_id: string
+  origin: string
+  created_at: string
+  message_count: number
+}
+
+type ConversationMessage = {
+  id: string
+  role: string
+  content: string
+  created_at: string
+}
+
+const AUTH_TOKEN_KEY = "auth_token"
+const AUTH_TENANT_KEY = "auth_tenant_id"
+const AUTH_WIDGET_KEY = "auth_widget_id"
+
 export default function DashboardPage() {
+  const router = useRouter()
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  const [widgetId, setWidgetId] = useState<string | null>(null)
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [isReady, setIsReady] = useState(false)
+
+  const [widget, setWidget] = useState<Widget | null>(null)
+  const [widgetName, setWidgetName] = useState("")
+  const [allowedOrigins, setAllowedOrigins] = useState("")
+
+  const [headerBackground, setHeaderBackground] = useState("#4f46e5")
+  const [headerText, setHeaderText] = useState("#ffffff")
+  const [buttonBackground, setButtonBackground] = useState("#4f46e5")
+  const [buttonText, setButtonText] = useState("#ffffff")
+  const [logoUrl, setLogoUrl] = useState("")
+  const [showLogo, setShowLogo] = useState(true)
+  const [avatarUrl, setAvatarUrl] = useState("")
+  const [position, setPosition] = useState<"bottom-right" | "bottom-left">(
+    "bottom-right"
+  )
+  const [offsetX, setOffsetX] = useState(24)
+  const [offsetY, setOffsetY] = useState(24)
+  const [welcomeMessage, setWelcomeMessage] = useState(
+    "Welcome! How can we help?"
+  )
+  const [initialPrompt, setInitialPrompt] = useState("")
+  const [openOnLoad, setOpenOnLoad] = useState(false)
+  const [showOnline, setShowOnline] = useState(true)
+
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const [tokens, setTokens] = useState<TokenSummary[]>([])
+  const [tokenName, setTokenName] = useState("")
+  const [createdToken, setCreatedToken] = useState<string | null>(null)
+  const [tokenError, setTokenError] = useState<string | null>(null)
+  const [tokenBusy, setTokenBusy] = useState(false)
+
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [timeRange, setTimeRange] = useState<"7" | "30" | "90">("30")
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+  const [conversations, setConversations] = useState<ConversationSummary[]>([])
+  const [selectedConversation, setSelectedConversation] =
+    useState<ConversationSummary | null>(null)
+  const [conversationMessages, setConversationMessages] = useState<
+    ConversationMessage[]
+  >([])
+  const [conversationLoading, setConversationLoading] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const token = localStorage.getItem(AUTH_TOKEN_KEY)
+    const widget = localStorage.getItem(AUTH_WIDGET_KEY)
+    const tenant = localStorage.getItem(AUTH_TENANT_KEY)
+    if (!token || !widget) {
+      router.push("/")
+      return
+    }
+    setAuthToken(token)
+    setWidgetId(widget)
+    setTenantId(tenant)
+    setIsReady(true)
+  }, [router])
+
+  useEffect(() => {
+    if (!authToken || !widgetId) return
+    void loadWidget()
+    void loadTokens()
+    void loadAnalytics(timeRange)
+    void loadConversations()
+  }, [authToken, widgetId, timeRange])
+
+  const currentOrigin = useMemo(() => {
+    if (typeof window === "undefined") return ""
+    return window.location.origin
+  }, [])
+
+  const apiFetch = async (path: string, options: RequestInit = {}) => {
+    if (!authToken) throw new Error("Missing auth token")
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+        ...(options.headers || {}),
+      },
+    })
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as { error?: string } | null
+      throw new Error(data?.error || "Request failed")
+    }
+    return res
+  }
+
+  const loadWidget = async () => {
+    if (!widgetId) return
+    try {
+      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}`)
+      const data = (await res.json()) as Widget
+      setWidget(data)
+      setWidgetName(data.name || "")
+      setAllowedOrigins(data.allowed_origins || "")
+      const parsed = parseWidgetConfig(data.config)
+      setHeaderBackground(parsed.theme?.headerBackground || "#4f46e5")
+      setHeaderText(parsed.theme?.headerText || "#ffffff")
+      setButtonBackground(parsed.theme?.buttonBackground || "#4f46e5")
+      setButtonText(parsed.theme?.buttonText || "#ffffff")
+      setLogoUrl(parsed.branding?.logoUrl || "")
+      setShowLogo(parsed.branding?.showLogo ?? true)
+      setAvatarUrl(parsed.branding?.avatarUrl || "")
+      setPosition(parsed.placement?.position || "bottom-right")
+      setOffsetX(parsed.placement?.offsetX ?? 24)
+      setOffsetY(parsed.placement?.offsetY ?? 24)
+      setWelcomeMessage(parsed.greeting?.welcomeMessage || "Welcome! How can we help?")
+      setInitialPrompt(parsed.greeting?.initialPrompt || "")
+      setOpenOnLoad(parsed.behavior?.openOnLoad ?? false)
+      setShowOnline(parsed.behavior?.showOnline ?? true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load widget")
+    }
+  }
+
+  const loadTokens = async () => {
+    if (!widgetId) return
+    try {
+      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`)
+      const data = (await res.json()) as TokenSummary[]
+      setTokens(data)
+    } catch (err) {
+      setTokenError(err instanceof Error ? err.message : "Failed to load tokens")
+    }
+  }
+
+  const loadAnalytics = async (days: "7" | "30" | "90") => {
+    if (!widgetId) return
+    setAnalyticsLoading(true)
+    try {
+      const to = new Date()
+      const from = new Date()
+      from.setDate(to.getDate() - Number(days))
+      const res = await apiFetch(
+        `/api/dashboard/widgets/${widgetId}/analytics?from=${from.toISOString()}&to=${to.toISOString()}`
+      )
+      const data = (await res.json()) as Analytics
+      setAnalytics(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load analytics")
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
+  const loadConversations = async () => {
+    if (!widgetId) return
+    try {
+      const res = await apiFetch(
+        `/api/dashboard/widgets/${widgetId}/conversations?limit=10`
+      )
+      const data = (await res.json()) as ConversationSummary[]
+      setConversations(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load conversations")
+    }
+  }
+
+  const loadConversationMessages = async (conversationId: string) => {
+    setConversationLoading(true)
+    try {
+      const res = await apiFetch(`/api/dashboard/conversations/${conversationId}/messages`)
+      const data = (await res.json()) as ConversationMessage[]
+      setConversationMessages(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load messages")
+    } finally {
+      setConversationLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!widgetId) return
+    setIsSaving(true)
+    setSaveMessage(null)
+    setError(null)
+
+    const normalizedOrigin = normalizeAllowedOrigin(allowedOrigins)
+    if (!normalizedOrigin && currentOrigin) {
+      setAllowedOrigins(currentOrigin)
+    }
+
+    const config: WidgetConfig = {
+      title: widgetName || "AI Assistant",
+      theme: {
+        headerBackground,
+        headerText,
+        buttonBackground,
+        buttonText,
+      },
+      branding: {
+        logoUrl: logoUrl || undefined,
+        showLogo,
+        avatarUrl: avatarUrl || undefined,
+      },
+      placement: {
+        position,
+        offsetX,
+        offsetY,
+      },
+      greeting: {
+        welcomeMessage,
+        initialPrompt: initialPrompt || undefined,
+      },
+      behavior: {
+        openOnLoad,
+        showOnline,
+      },
+    }
+
+    try {
+      await apiFetch(`/api/dashboard/widgets/${widgetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: widgetName,
+          allowed_origins: normalizeAllowedOrigin(allowedOrigins) || currentOrigin,
+          config: JSON.stringify(config),
+        }),
+      })
+      setSaveMessage("Settings saved.")
+      await loadWidget()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save widget")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCreateToken = async () => {
+    if (!widgetId || !tokenName.trim()) return
+    setTokenBusy(true)
+    setTokenError(null)
+    setCreatedToken(null)
+    try {
+      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`, {
+        method: "POST",
+        body: JSON.stringify({ name: tokenName }),
+      })
+      const data = (await res.json()) as { token: string }
+      setCreatedToken(data.token)
+      setTokenName("")
+      await loadTokens()
+    } catch (err) {
+      setTokenError(err instanceof Error ? err.message : "Failed to create token")
+    } finally {
+      setTokenBusy(false)
+    }
+  }
+
+  const handleRotateTokens = async () => {
+    if (!widgetId || !tokenName.trim()) return
+    setTokenBusy(true)
+    setTokenError(null)
+    setCreatedToken(null)
+    try {
+      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/rotate`, {
+        method: "POST",
+        body: JSON.stringify({ name: tokenName }),
+      })
+      const data = (await res.json()) as { token: string }
+      setCreatedToken(data.token)
+      setTokenName("")
+      await loadTokens()
+    } catch (err) {
+      setTokenError(err instanceof Error ? err.message : "Failed to rotate tokens")
+    } finally {
+      setTokenBusy(false)
+    }
+  }
+
+  const handleRevokeToken = async (tokenId: string) => {
+    if (!widgetId) return
+    setTokenBusy(true)
+    setTokenError(null)
+    try {
+      await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/${tokenId}`, {
+        method: "DELETE",
+      })
+      await loadTokens()
+    } catch (err) {
+      setTokenError(err instanceof Error ? err.message : "Failed to revoke token")
+    } finally {
+      setTokenBusy(false)
+    }
+  }
+
+  const normalizeAllowedOrigin = (value: string) =>
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)[0] ?? ""
+
+  const appendCurrentOrigin = () => {
+    if (!currentOrigin) return
+    setAllowedOrigins(currentOrigin)
+  }
+
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <div className="max-w-5xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-display font-bold text-foreground">
-          Dashboard
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          You are logged in. Build out your widget configuration here.
-        </p>
-      </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background/80 backdrop-blur transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          {!isReady ? (
+            <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">
+              Loading dashboard...
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-6xl space-y-10 py-6">
+              <header className="space-y-2" id="overview">
+                <h1 className="text-3xl font-display font-bold text-foreground">
+                  Client Dashboard
+                </h1>
+                <p className="text-muted-foreground">
+                  Manage your widget settings, tokens, and usage analytics.
+                </p>
+                {tenantId && (
+                  <p className="text-xs text-muted-foreground">
+                    Tenant: {tenantId} • Widget: {widgetId}
+                  </p>
+                )}
+              </header>
+
+              {error && (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <section className="grid gap-4 md:grid-cols-3">
+                <OverviewCard
+                  label="Tokens"
+                  value={tokens.length.toString()}
+                  detail={tokens.length ? `Last used: ${formatDate(tokens[0]?.last_used_at)}` : "No token usage yet"}
+                />
+                <OverviewCard
+                  label="Recent Chat"
+                  value={analytics?.last_chat_at ? formatDate(analytics.last_chat_at) : "—"}
+                  detail="Latest message timestamp"
+                />
+                <OverviewCard
+                  label="Sessions (30d)"
+                  value={analytics?.sessions.total?.toString() || "0"}
+                  detail={`Today: ${analytics?.sessions.today ?? 0}`}
+                />
+              </section>
+
+              <section id="settings" className="rounded-2xl border border-border bg-card p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Widget Settings</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Configure widget behavior and appearance.
+                  </p>
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <Field label="Name">
+                      <input
+                        value={widgetName}
+                        onChange={(event) => setWidgetName(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        placeholder="Your widget name"
+                      />
+                    </Field>
+                    <Field label="Allowed Origin">
+                      <textarea
+                        rows={2}
+                        value={allowedOrigins}
+                        onChange={(event) =>
+                          setAllowedOrigins(normalizeAllowedOrigin(event.target.value))
+                        }
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        placeholder="https://example.com"
+                      />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                        <span>Current origin: {currentOrigin || "unknown"}</span>
+                        <button
+                          type="button"
+                          onClick={appendCurrentOrigin}
+                          className="text-primary hover:text-primary/80"
+                        >
+                          Use current domain
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        One website per account. Set the exact domain where the widget will be embedded.
+                      </p>
+                    </Field>
+                    <Field label="Greeting Message">
+                      <input
+                        value={welcomeMessage}
+                        onChange={(event) => setWelcomeMessage(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      />
+                    </Field>
+                    <Field label="Initial Prompt (optional)">
+                      <input
+                        value={initialPrompt}
+                        onChange={(event) => setInitialPrompt(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      />
+                    </Field>
+                    <Field label="Behavior">
+                      <div className="space-y-3 text-sm">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={openOnLoad}
+                            onChange={(event) => setOpenOnLoad(event.target.checked)}
+                          />
+                          Open on load
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={showOnline}
+                            onChange={(event) => setShowOnline(event.target.checked)}
+                          />
+                          Show online indicator
+                        </label>
+                      </div>
+                    </Field>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Field label="Theme">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <ColorField label="Header" value={headerBackground} onChange={setHeaderBackground} />
+                        <ColorField label="Header Text" value={headerText} onChange={setHeaderText} />
+                        <ColorField label="Button" value={buttonBackground} onChange={setButtonBackground} />
+                        <ColorField label="Button Text" value={buttonText} onChange={setButtonText} />
+                      </div>
+                    </Field>
+                    <Field label="Branding">
+                      <div className="space-y-3 text-sm">
+                        <input
+                          value={logoUrl}
+                          onChange={(event) => setLogoUrl(event.target.value)}
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                          placeholder="Logo URL"
+                        />
+                        <input
+                          value={avatarUrl}
+                          onChange={(event) => setAvatarUrl(event.target.value)}
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                          placeholder="Avatar URL (optional)"
+                        />
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={showLogo}
+                            onChange={(event) => setShowLogo(event.target.checked)}
+                          />
+                          Show logo in header
+                        </label>
+                      </div>
+                    </Field>
+                    <Field label="Placement">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <select
+                          value={position}
+                          onChange={(event) =>
+                            setPosition(event.target.value as "bottom-right" | "bottom-left")
+                          }
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="bottom-right">Bottom right</option>
+                          <option value="bottom-left">Bottom left</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={offsetX}
+                            onChange={(event) => setOffsetX(Number(event.target.value))}
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            placeholder="Offset X"
+                          />
+                          <input
+                            type="number"
+                            value={offsetY}
+                            onChange={(event) => setOffsetY(Number(event.target.value))}
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                            placeholder="Offset Y"
+                          />
+                        </div>
+                      </div>
+                    </Field>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                  >
+                    {isSaving ? "Saving..." : "Save settings"}
+                  </button>
+                  {saveMessage && <span className="text-sm text-emerald-600">{saveMessage}</span>}
+                  <span className="text-xs text-muted-foreground">
+                    Saving allowed origins enforces widget CORS checks.
+                  </span>
+                </div>
+              </section>
+
+              <section id="tokens" className="rounded-2xl border border-border bg-card p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Embed & Tokens</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Securely manage widget tokens and embed instructions.
+                  </p>
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <Field label="Embed snippet">
+                      <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
+{`import { ChatWidget } from "@/components/ChatWidget";
+
+// Set NEXT_PUBLIC_WIDGET_TOKEN to your widget token
+export default function App() {
+  return <ChatWidget />;
+}`}
+                      </pre>
+                      <p className="text-xs text-muted-foreground">
+                        Required header: <code>Authorization: Bearer &lt;token&gt;</code>
+                      </p>
+                    </Field>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Safety tips:</p>
+                      <p>• Tokens are secrets. Do not expose them in public repos.</p>
+                      <p>• Rotate tokens immediately if leaked.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Field label="Create / Rotate Token">
+                      <div className="flex gap-2">
+                        <input
+                          value={tokenName}
+                          onChange={(event) => setTokenName(event.target.value)}
+                          className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                          placeholder="Token name"
+                        />
+                        <button
+                          onClick={handleCreateToken}
+                          disabled={tokenBusy}
+                          className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                          Create
+                        </button>
+                        <button
+                          onClick={handleRotateTokens}
+                          disabled={tokenBusy}
+                          className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                          Rotate
+                        </button>
+                      </div>
+                      {tokenError && (
+                        <p className="text-xs text-destructive">{tokenError}</p>
+                      )}
+                      {createdToken && (
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700">
+                          New token (copy now): <strong>{createdToken}</strong>
+                        </div>
+                      )}
+                    </Field>
+                    <Field label="Active Tokens">
+                      <div className="space-y-2 text-sm">
+                        {tokens.length === 0 && (
+                          <p className="text-muted-foreground">No tokens yet.</p>
+                        )}
+                        {tokens.map((token) => (
+                          <div
+                            key={token.id}
+                            className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                          >
+                            <div>
+                              <p className="font-medium">{token.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Created {formatDate(token.created_at)} • Last used{" "}
+                                {formatDate(token.last_used_at)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleRevokeToken(token.id)}
+                              className="text-xs text-destructive hover:text-destructive/80"
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </Field>
+                  </div>
+                </div>
+              </section>
+
+              <section id="analytics" className="rounded-2xl border border-border bg-card p-6 space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-semibold">Analytics</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Basic usage insights for your widget.
+                    </p>
+                  </div>
+                  <select
+                    value={timeRange}
+                    onChange={(event) => setTimeRange(event.target.value as "7" | "30" | "90")}
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                  </select>
+                </div>
+
+                {analyticsLoading && (
+                  <p className="text-sm text-muted-foreground">Loading analytics...</p>
+                )}
+                {analytics && (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <OverviewCard
+                        label="Messages"
+                        value={analytics.messages.total.toString()}
+                        detail={`User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`}
+                      />
+                      <OverviewCard
+                        label="Sessions"
+                        value={analytics.sessions.total.toString()}
+                        detail={`Today ${analytics.sessions.today}`}
+                      />
+                      <OverviewCard
+                        label="Token usage"
+                        value={analytics.tokens.length.toString()}
+                        detail={`Last used ${formatDate(analytics.tokens[0]?.last_used_at)}`}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold">Per-domain activity</h3>
+                      {analytics.per_domain.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No domain activity yet.</p>
+                      ) : (
+                        <div className="grid gap-2 text-sm">
+                          {analytics.per_domain.map((row) => (
+                            <div
+                              key={row.origin || "unknown"}
+                              className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                            >
+                              <span>{row.origin || "Unknown origin"}</span>
+                              <span className="text-muted-foreground">
+                                {row.sessions} sessions • {row.messages} messages
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <section id="conversations" className="rounded-2xl border border-border bg-card p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">Conversations</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Recent chat sessions for this widget.
+                  </p>
+                </div>
+                <div className="grid gap-6 md:grid-cols-[1fr_1.5fr]">
+                  <div className="space-y-2">
+                    {conversations.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No conversations yet.</p>
+                    )}
+                    {conversations.map((conversation) => (
+                      <button
+                        key={conversation.id}
+                        onClick={() => {
+                          setSelectedConversation(conversation)
+                          void loadConversationMessages(conversation.id)
+                        }}
+                        className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${
+                          selectedConversation?.id === conversation.id
+                            ? "border-primary/60 bg-primary/10"
+                            : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        <div className="font-medium">Session {conversation.session_id}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {conversation.origin || "Unknown origin"} •{" "}
+                          {conversation.message_count} messages •{" "}
+                          {formatDate(conversation.created_at)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-background p-4 min-h-[220px]">
+                    {conversationLoading && (
+                      <p className="text-sm text-muted-foreground">Loading messages...</p>
+                    )}
+                    {!conversationLoading && conversationMessages.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Select a session to view messages.
+                      </p>
+                    )}
+                    <div className="space-y-3 text-sm">
+                      {conversationMessages.map((message) => (
+                        <div key={message.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{message.role}</span>
+                            <span>{formatDate(message.created_at)}</span>
+                          </div>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
+
+function parseWidgetConfig(raw: string | null): WidgetConfig {
+  if (!raw) return {}
+  try {
+    return JSON.parse(raw) as WidgetConfig
+  } catch {
+    return {}
+  }
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "—"
+  return date.toLocaleString()
+}
+
+function OverviewCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-4">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-2xl font-semibold">{value}</p>
+      <p className="text-xs text-muted-foreground">{detail}</p>
     </div>
-  );
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-sm font-medium">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm">
+      <input
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 w-8 rounded border border-border bg-background"
+      />
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs"
+      />
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </label>
+  )
 }

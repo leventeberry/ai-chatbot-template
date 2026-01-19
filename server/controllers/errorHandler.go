@@ -3,8 +3,9 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"chatbot_api/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 // handleServiceError converts service errors to appropriate HTTP responses
@@ -20,8 +21,9 @@ func handleServiceError(c *gin.Context, err error) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 	case services.ErrNoFieldsToUpdate:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "At least one field must be provided for update"})
+	case services.ErrMissingTenantWidget:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id and widget_id are required"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 	}
 }
-

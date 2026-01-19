@@ -24,6 +24,16 @@ type CreateWidgetRequest struct {
 	Config         string `json:"config"`
 }
 
+type WidgetResponse struct {
+	ID             string `json:"id"`
+	TenantID       string `json:"tenant_id"`
+	Name           string `json:"name"`
+	AllowedOrigins string `json:"allowed_origins"`
+	Config         string `json:"config"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
 type CreateWidgetTokenRequest struct {
 	Name string `json:"name"`
 }
@@ -106,6 +116,48 @@ func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusCreated, widget)
+	}
+}
+
+// GetWidget returns a widget by ID.
+// @Summary      Get widget
+// @Description  Fetch widget details
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string               true  "Widget ID"
+// @Success      200      {object}  WidgetResponse
+// @Failure      400      {object}  map[string]string
+// @Failure      401      {object}  map[string]string
+// @Failure      404      {object}  map[string]string
+// @Router       /api/admin/widgets/{id} [get]
+func GetWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		widgetID := c.Param("id")
+		if widgetID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "widget id is required"})
+			return
+		}
+
+		widget, err := widgetRepo.FindByID(widgetID)
+		if err != nil {
+			if err == repositories.ErrWidgetNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "widget not found"})
+				return
+			}
+			handleServiceError(c, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, WidgetResponse{
+			ID:             widget.ID,
+			TenantID:       widget.TenantID,
+			Name:           widget.Name,
+			AllowedOrigins: widget.AllowedOrigins,
+			Config:         widget.Config,
+			CreatedAt:      widget.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:      widget.UpdatedAt.Format(time.RFC3339),
+		})
 	}
 }
 

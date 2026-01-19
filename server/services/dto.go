@@ -2,6 +2,8 @@ package services
 
 // CreateUserInput holds the data for creating a new user
 type CreateUserInput struct {
+	TenantID  string
+	WidgetID  string
 	FirstName string
 	LastName  string
 	Email     string

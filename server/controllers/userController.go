@@ -11,6 +11,8 @@ import (
 )
 // CreateUserInput holds the data for creating a new user
 type CreateUserInput struct {
+	TenantID  string `json:"tenant_id" binding:"required,uuid"`
+	WidgetID  string `json:"widget_id" binding:"required,uuid"`
 	FirstName string `json:"first_name" binding:"required,min=1,max=50"`
 	LastName  string `json:"last_name" binding:"required,min=1,max=50"`
 	Email     string `json:"email" binding:"required,email,max=255"`
@@ -33,6 +35,8 @@ type UpdateUserInput struct {
 // Excludes sensitive fields like password hash
 type UserResponse struct {
 	ID        int    `json:"id"`
+	TenantID  string `json:"tenant_id"`
+	WidgetID  string `json:"widget_id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
@@ -46,6 +50,8 @@ type UserResponse struct {
 func toUserResponse(user *models.User) *UserResponse {
 	return &UserResponse{
 		ID:        user.ID,
+		TenantID:  user.TenantID,
+		WidgetID:  user.WidgetID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
@@ -210,6 +216,8 @@ func CreateUser(userService services.UserService) gin.HandlerFunc {
 		}
 
 		createInput := &services.CreateUserInput{
+			TenantID:  input.TenantID,
+			WidgetID:  input.WidgetID,
 			FirstName: input.FirstName,
 			LastName:  input.LastName,
 			Email:     input.Email,

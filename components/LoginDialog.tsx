@@ -20,12 +20,16 @@ type LoginResponse = {
   user: {
     id: number;
     email: string;
+    tenant_id: string;
+    widget_id: string;
   };
 };
 
 type SignupResponse = LoginResponse;
 
 const AUTH_TOKEN_KEY = "auth_token";
+const AUTH_TENANT_KEY = "auth_tenant_id";
+const AUTH_WIDGET_KEY = "auth_widget_id";
 
 export function LoginDialog() {
   const router = useRouter();
@@ -92,6 +96,10 @@ export function LoginDialog() {
 
       if (data && "token" in data) {
         localStorage.setItem(AUTH_TOKEN_KEY, data.token.jwt_token);
+        if ("user" in data) {
+          localStorage.setItem(AUTH_TENANT_KEY, data.user.tenant_id);
+          localStorage.setItem(AUTH_WIDGET_KEY, data.user.widget_id);
+        }
       }
 
       setSuccessMessage(

@@ -30,6 +30,10 @@ func NewUserService(userRepo repositories.UserRepository, cacheClient cache.Cach
 
 // CreateUser creates a new user with business logic validation
 func (s *userService) CreateUser(ctx context.Context, input *CreateUserInput) (*models.User, error) {
+	if strings.TrimSpace(input.TenantID) == "" || strings.TrimSpace(input.WidgetID) == "" {
+		return nil, ErrMissingTenantWidget
+	}
+
 	// Validate role
 	if input.Role != "" && !IsValidRole(input.Role) {
 		return nil, ErrInvalidRole
@@ -58,6 +62,8 @@ func (s *userService) CreateUser(ctx context.Context, input *CreateUserInput) (*
 
 	// Create user model
 	user := &models.User{
+		TenantID:  input.TenantID,
+		WidgetID:  input.WidgetID,
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,

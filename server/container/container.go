@@ -18,6 +18,8 @@ type Container struct {
 	RepositoryFactory *factories.RepositoryFactory
 	ServiceFactory    *factories.ServiceFactory
 	UserRepository    repositories.UserRepository
+	ConversationRepository repositories.ConversationRepository
+	MessageRepository      repositories.MessageRepository
 	WidgetRepository  repositories.WidgetRepository
 	TenantRepository  repositories.TenantRepository
 	ApiKeyRepository  repositories.ApiKeyRepository
@@ -51,11 +53,11 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		widgetRepo = repoFactory.CreateWidgetRepository()
 		tenantRepo = repoFactory.CreateTenantRepository()
 		apiKeyRepo = repoFactory.CreateApiKeyRepository()
-		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, apiKeyRepo, cacheClient)
+		serviceFactory = factories.NewServiceFactory(userRepo, conversationRepo, messageRepo, apiKeyRepo, tenantRepo, widgetRepo, cacheClient)
 		userService = serviceFactory.CreateUserService()
 		authService = serviceFactory.CreateAuthService()
 	} else {
-		serviceFactory = factories.NewServiceFactory(nil, nil, nil, nil, cacheClient)
+		serviceFactory = factories.NewServiceFactory(nil, nil, nil, nil, nil, nil, cacheClient)
 	}
 
 	chatService := serviceFactory.CreateChatService()
@@ -67,6 +69,8 @@ func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
 		RepositoryFactory: repoFactory,
 		ServiceFactory:    serviceFactory,
 		UserRepository:    userRepo,
+		ConversationRepository: conversationRepo,
+		MessageRepository:      messageRepo,
 		WidgetRepository:  widgetRepo,
 		TenantRepository:  tenantRepo,
 		ApiKeyRepository:  apiKeyRepo,

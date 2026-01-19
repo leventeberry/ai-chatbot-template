@@ -21,8 +21,10 @@ func getTokenExpirationDays() int {
 
 // Claims defines the JWT payload structure.
 type Claims struct {
-    ApiKey string `json:"api_key"`
-    Role   string `json:"role"`
+    ApiKey   string `json:"api_key"`
+    Role     string `json:"role"`
+    TenantID string `json:"tenant_id"`
+    WidgetID string `json:"widget_id"`
     jwt.RegisteredClaims
 }
 
@@ -66,6 +68,8 @@ func AuthMiddleware() gin.HandlerFunc {
         c.Set("apiKey", claims.ApiKey)
         c.Set("userID", claims.Subject)
         c.Set("role", claims.Role)
+        c.Set("tenantId", claims.TenantID)
+        c.Set("widgetId", claims.WidgetID)
         c.Set("expiresAt", claims.ExpiresAt.Time)
 
         c.Next()
@@ -73,15 +77,17 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 // CreateToken generates a new JWT token (and API key) for the given user ID and role.
-func CreateToken(userID int, role string) (*Authentication, error) {
+func CreateToken(userID int, role, tenantID, widgetID string) (*Authentication, error) {
     cfg := config.Get()
     jwtSecret := []byte(cfg.JWT.Secret)
     apiKey := uuid.NewString()
     expiresAt := time.Now().Add(time.Hour * 24 * time.Duration(getTokenExpirationDays()))
 
     claims := Claims{
-        ApiKey: apiKey,
-        Role:   role,
+        ApiKey:   apiKey,
+        Role:     role,
+        TenantID: tenantID,
+        WidgetID: widgetID,
         RegisteredClaims: jwt.RegisteredClaims{
             Subject:   strconv.Itoa(userID),
             IssuedAt:  jwt.NewNumericDate(time.Now()),

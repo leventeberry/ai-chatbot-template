@@ -11,5 +11,6 @@ var (
 	ErrPasswordHashing    = errors.New("failed to hash password")
 	ErrNoFieldsToUpdate   = errors.New("at least one field must be provided for update")
 	ErrTokenGeneration    = errors.New("failed to generate token")
+	ErrMissingTenantWidget = errors.New("tenant and widget are required for user")
 )
 

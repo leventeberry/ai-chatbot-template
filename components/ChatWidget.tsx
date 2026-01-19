@@ -33,12 +33,35 @@ type WidgetTheme = {
   buttonText?: string;
 };
 
+type WidgetBranding = {
+  logoUrl?: string;
+  showLogo?: boolean;
+  avatarUrl?: string;
+};
+
+type WidgetPlacement = {
+  position?: "bottom-right" | "bottom-left";
+  offsetX?: number;
+  offsetY?: number;
+};
+
+type WidgetGreeting = {
+  welcomeMessage?: string;
+  initialPrompt?: string;
+};
+
+type WidgetBehavior = {
+  openOnLoad?: boolean;
+  showOnline?: boolean;
+};
+
 const FALLBACK_ERROR_MESSAGE =
   "Sorry, I'm having trouble connecting to the AI.";
 const HISTORY_CACHE_KEY = "chatbot-history";
 const WIDGET_CONFIG_CACHE_KEY = "chatbot-widget-config";
 const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
 const DEFAULT_WIDGET_TITLE = "AI Assistant";
+const DEFAULT_WELCOME_MESSAGE = "I am here to help answer your questions. Ask me anything!";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,12 +69,23 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [widgetTitle, setWidgetTitle] = useState(DEFAULT_WIDGET_TITLE);
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+  const [widgetBranding, setWidgetBranding] = useState<WidgetBranding | null>(null);
+  const [widgetPlacement, setWidgetPlacement] = useState<WidgetPlacement | null>(
+    null
+  );
+  const [widgetGreeting, setWidgetGreeting] = useState<WidgetGreeting | null>(
+    null
+  );
+  const [widgetBehavior, setWidgetBehavior] = useState<WidgetBehavior | null>(
+    null
+  );
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [showHistorySync, setShowHistorySync] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydratedHistoryRef = useRef(false);
+  const hasAutoOpenedRef = useRef(false);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -67,6 +101,10 @@ export function ChatWidget() {
         const parsed = resolveWidgetConfig(cached);
         setWidgetTitle(parsed.title);
         setWidgetTheme(parsed.theme);
+        setWidgetBranding(parsed.branding);
+        setWidgetPlacement(parsed.placement);
+        setWidgetGreeting(parsed.greeting);
+        setWidgetBehavior(parsed.behavior);
       }
 
       try {
@@ -81,14 +119,30 @@ export function ChatWidget() {
         const parsed = resolveWidgetConfig(data);
         setWidgetTitle(parsed.title);
         setWidgetTheme(parsed.theme);
+        setWidgetBranding(parsed.branding);
+        setWidgetPlacement(parsed.placement);
+        setWidgetGreeting(parsed.greeting);
+        setWidgetBehavior(parsed.behavior);
       } catch {
         setWidgetTitle(DEFAULT_WIDGET_TITLE);
         setWidgetTheme(null);
+        setWidgetBranding(null);
+        setWidgetPlacement(null);
+        setWidgetGreeting(null);
+        setWidgetBehavior(null);
       }
     };
 
     void loadConfig();
   }, [isOpen]);
+
+  useEffect(() => {
+    if (hasAutoOpenedRef.current) return;
+    if (widgetBehavior?.openOnLoad) {
+      setIsOpen(true);
+      hasAutoOpenedRef.current = true;
+    }
+  }, [widgetBehavior]);
 
   useEffect(() => {
     if (!isOpen || sessionId) return;
@@ -242,7 +296,10 @@ export function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 font-sans">
+    <div
+      className="fixed z-50 flex flex-col items-end gap-4 font-sans"
+      style={resolveWidgetPlacement(widgetPlacement)}
+    >
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -258,15 +315,27 @@ export function ChatWidget() {
             >
               <div className="flex items-center gap-3 text-primary-foreground">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-                  <Bot className="w-6 h-6" />
+                  {widgetBranding?.logoUrl && widgetBranding.showLogo !== false ? (
+                    <img
+                      src={widgetBranding.logoUrl}
+                      alt="Logo"
+                      className="w-6 h-6 object-contain"
+                    />
+                  ) : (
+                    <Bot className="w-6 h-6" />
+                  )}
                 </div>
                 <div>
                   <h3 className="font-bold text-lg leading-tight font-display">
                     {widgetTitle}
                   </h3>
                   <div className="flex items-center gap-1.5 opacity-90">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-xs font-medium">Online</span>
+                    {widgetBehavior?.showOnline !== false && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-xs font-medium">Online</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -293,7 +362,7 @@ export function ChatWidget() {
                       Welcome!
                     </h4>
                     <p className="text-sm">
-                      I am here to help answer your questions. Ask me anything!
+                      {widgetGreeting?.welcomeMessage || DEFAULT_WELCOME_MESSAGE}
                     </p>
                   </div>
                   {showHistorySync && isHistoryLoading && (
@@ -319,8 +388,16 @@ export function ChatWidget() {
                         )}
                       >
                         {isAi && (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1">
-                            <Bot className="w-5 h-5" />
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1 overflow-hidden">
+                            {widgetBranding?.avatarUrl ? (
+                              <img
+                                src={widgetBranding.avatarUrl}
+                                alt="Assistant avatar"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Bot className="w-5 h-5" />
+                            )}
                           </div>
                         )}
 
@@ -460,18 +537,49 @@ function resolveWidgetTitle(config: WidgetConfig): string {
 function resolveWidgetConfig(config: WidgetConfig): {
   title: string;
   theme: WidgetTheme | null;
+  branding: WidgetBranding | null;
+  placement: WidgetPlacement | null;
+  greeting: WidgetGreeting | null;
+  behavior: WidgetBehavior | null;
 } {
   const title = resolveWidgetTitle(config);
   const raw = config?.config ?? "";
   if (!raw.trim()) {
-    return { title, theme: null };
+    return {
+      title,
+      theme: null,
+      branding: null,
+      placement: null,
+      greeting: null,
+      behavior: null,
+    };
   }
 
   try {
-    const parsed = JSON.parse(raw) as { theme?: WidgetTheme };
-    return { title, theme: parsed?.theme ?? null };
+    const parsed = JSON.parse(raw) as {
+      theme?: WidgetTheme;
+      branding?: WidgetBranding;
+      placement?: WidgetPlacement;
+      greeting?: WidgetGreeting;
+      behavior?: WidgetBehavior;
+    };
+    return {
+      title,
+      theme: parsed?.theme ?? null,
+      branding: parsed?.branding ?? null,
+      placement: parsed?.placement ?? null,
+      greeting: parsed?.greeting ?? null,
+      behavior: parsed?.behavior ?? null,
+    };
   } catch {
-    return { title, theme: null };
+    return {
+      title,
+      theme: null,
+      branding: null,
+      placement: null,
+      greeting: null,
+      behavior: null,
+    };
   }
 }
 
@@ -507,5 +615,16 @@ function resolveButtonStyle(theme: WidgetTheme | null): CSSProperties | undefine
   return {
     background: theme.buttonBackground,
     color: theme.buttonText,
+  };
+}
+
+function resolveWidgetPlacement(placement: WidgetPlacement | null): CSSProperties {
+  const position = placement?.position ?? "bottom-right";
+  const offsetX = placement?.offsetX ?? 24;
+  const offsetY = placement?.offsetY ?? 24;
+  return {
+    bottom: offsetY,
+    right: position === "bottom-right" ? offsetX : "auto",
+    left: position === "bottom-left" ? offsetX : "auto",
   };
 }

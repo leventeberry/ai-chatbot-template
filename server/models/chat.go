@@ -40,6 +40,7 @@ type Conversation struct {
 	TenantID  string    `gorm:"type:uuid;index;not null" json:"tenant_id"`
 	WidgetID  string    `gorm:"type:uuid;index;not null" json:"widget_id"`
 	SessionID string    `gorm:"index;not null" json:"session_id"`
+	Origin    string    `gorm:"type:text" json:"origin"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

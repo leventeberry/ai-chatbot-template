@@ -1,6 +1,10 @@
 package repositories
 
-import "chatbot_api/models"
+import (
+	"time"
+
+	"chatbot_api/models"
+)
 
 // UserRepository defines the interface for user data operations
 type UserRepository interface {
@@ -16,15 +20,24 @@ type UserRepository interface {
 
 // ConversationRepository defines the interface for conversation operations
 type ConversationRepository interface {
+	FindByID(id string) (*models.Conversation, error)
 	FindBySession(tenantID, widgetID, sessionID string) (*models.Conversation, error)
-	FindOrCreate(tenantID, widgetID, sessionID string) (*models.Conversation, error)
+	FindOrCreate(tenantID, widgetID, sessionID, origin string) (*models.Conversation, error)
 	Create(conversation *models.Conversation) error
+	CountByWidgetIDBetween(widgetID string, from, to *time.Time) (int64, error)
+	CountByWidgetIDSince(widgetID string, since time.Time) (int64, error)
+	ListSummariesByWidgetID(widgetID string, from, to *time.Time, limit int) ([]ConversationSummary, error)
+	CountByWidgetIDGroupedByOrigin(widgetID string, from, to *time.Time) ([]OriginSessionCount, error)
 }
 
 // MessageRepository defines the interface for message operations
 type MessageRepository interface {
 	Create(message *models.Message) error
 	FindByConversationID(conversationID string) ([]models.Message, error)
+	CountByWidgetIDBetween(widgetID string, from, to *time.Time) (int64, error)
+	CountByWidgetIDAndRoleBetween(widgetID, role string, from, to *time.Time) (int64, error)
+	CountByWidgetIDGroupedByOrigin(widgetID string, from, to *time.Time) ([]OriginMessageCount, error)
+	LatestMessageAtByWidgetID(widgetID string) (*time.Time, error)
 }
 
 // WidgetRepository defines the interface for widget operations

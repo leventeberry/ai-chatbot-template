@@ -30,8 +30,10 @@ func ReturnSuccessData(c *gin.Context, user *models.User, token *middleware.Auth
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
+			"id":        user.ID,
+			"email":     user.Email,
+			"tenant_id": user.TenantID,
+			"widget_id": user.WidgetID,
 		},
 	})
 }

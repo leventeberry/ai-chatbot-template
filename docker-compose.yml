@@ -108,7 +108,9 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - goapi_network
+      goapi_network:
+        aliases:
+          - api
 
   web:
     build:
