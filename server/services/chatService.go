@@ -32,16 +32,21 @@ type chatService struct {
 	history          map[string][]ChatMessage
 	conversationRepo repositories.ConversationRepository
 	messageRepo      repositories.MessageRepository
+	widgetRepo       repositories.WidgetRepository
 	apiKey           string
 	baseURL          string
 	model            string
 	client           *http.Client
 	fallback         string
+	demoWidgetID     string
+	demoPrompt       string
+	demoDocs         string
 }
 
 func NewChatService(
 	conversationRepo repositories.ConversationRepository,
 	messageRepo repositories.MessageRepository,
+	widgetRepo repositories.WidgetRepository,
 ) ChatService {
 	baseURL := strings.TrimSpace(os.Getenv("AI_INTEGRATIONS_OPENAI_BASE_URL"))
 	if baseURL == "" {
@@ -57,11 +62,15 @@ func NewChatService(
 		history:          map[string][]ChatMessage{},
 		conversationRepo: conversationRepo,
 		messageRepo:      messageRepo,
+		widgetRepo:       widgetRepo,
 		apiKey:           strings.TrimSpace(os.Getenv("AI_INTEGRATIONS_OPENAI_API_KEY")),
 		baseURL:          baseURL,
 		model:            model,
 		client:           &http.Client{Timeout: 60 * time.Second},
 		fallback:         "Sorry, I'm having trouble connecting to the AI.",
+		demoWidgetID:     strings.TrimSpace(os.Getenv("DEMO_WIDGET_ID")),
+		demoPrompt:       strings.TrimSpace(os.Getenv("DEMO_SYSTEM_PROMPT")),
+		demoDocs:         strings.TrimSpace(os.Getenv("DEMO_DOCUMENTATION")),
 	}
 }
 
@@ -124,7 +133,8 @@ func (s *chatService) SendMessage(ctx context.Context, tenantID, widgetID, sessi
 	}
 
 	historySnapshot := s.GetHistory(ctx, tenantID, widgetID, sessionID)
-	resp, err := s.callOpenAI(ctx, historySnapshot)
+	modelMessages := s.withSystemMessage(ctx, widgetID, historySnapshot)
+	resp, err := s.callOpenAI(ctx, modelMessages)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("OpenAI request failed")
 		resp = ChatMessage{Role: "assistant", Content: s.fallback}
@@ -165,7 +175,8 @@ func (s *chatService) sendMessageInMemory(tenantID, widgetID, sessionID, message
 		return resp
 	}
 
-	resp, err := s.callOpenAI(context.Background(), historySnapshot)
+	modelMessages := s.withSystemMessage(context.Background(), widgetID, historySnapshot)
+	resp, err := s.callOpenAI(context.Background(), modelMessages)
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("OpenAI request failed")
 		resp = ChatMessage{Role: "assistant", Content: s.fallback}
@@ -247,6 +258,86 @@ func (s *chatService) callOpenAI(ctx context.Context, msgs []ChatMessage) (ChatM
 	}
 
 	return result.Choices[0].Message, nil
+}
+
+type widgetPromptConfig struct {
+	SystemPrompt  string `json:"systemPrompt"`
+	Documentation string `json:"documentation"`
+}
+
+func (s *chatService) withSystemMessage(
+	ctx context.Context,
+	widgetID string,
+	history []ChatMessage,
+) []ChatMessage {
+	prompt, docs := s.resolvePrompt(ctx, widgetID)
+	systemMessage := buildSystemMessage(prompt, docs)
+	if systemMessage == nil {
+		return history
+	}
+
+	messages := make([]ChatMessage, 0, len(history)+1)
+	messages = append(messages, *systemMessage)
+	messages = append(messages, history...)
+	return messages
+}
+
+func (s *chatService) resolvePrompt(ctx context.Context, widgetID string) (string, string) {
+	if widgetID == "" {
+		return "", ""
+	}
+
+	if s.demoWidgetID != "" && widgetID == s.demoWidgetID {
+		if s.demoPrompt != "" || s.demoDocs != "" {
+			return s.demoPrompt, s.demoDocs
+		}
+	}
+
+	if s.widgetRepo == nil {
+		return "", ""
+	}
+
+	widget, err := s.widgetRepo.FindByID(widgetID)
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Failed to load widget for prompt resolution")
+		return "", ""
+	}
+
+	config := parseWidgetPromptConfig(widget.Config)
+	return config.SystemPrompt, config.Documentation
+}
+
+func parseWidgetPromptConfig(raw string) widgetPromptConfig {
+	if strings.TrimSpace(raw) == "" {
+		return widgetPromptConfig{}
+	}
+	var config widgetPromptConfig
+	if err := json.Unmarshal([]byte(raw), &config); err != nil {
+		return widgetPromptConfig{}
+	}
+	return config
+}
+
+func buildSystemMessage(prompt, documentation string) *ChatMessage {
+	prompt = strings.TrimSpace(prompt)
+	documentation = strings.TrimSpace(documentation)
+
+	if prompt == "" && documentation == "" {
+		return nil
+	}
+
+	content := prompt
+	if documentation != "" {
+		if content != "" {
+			content += "\n\n"
+		}
+		content += "Documentation:\n" + documentation
+	}
+
+	return &ChatMessage{
+		Role:    "system",
+		Content: content,
+	}
 }
 
 func historyKey(tenantID, widgetID, sessionID string) string {

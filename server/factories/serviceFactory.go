@@ -52,7 +52,7 @@ func (f *ServiceFactory) CreateAuthService() services.AuthService {
 
 // CreateChatService creates a ChatService instance
 func (f *ServiceFactory) CreateChatService() services.ChatService {
-	return services.NewChatService(f.conversationRepo, f.messageRepo)
+	return services.NewChatService(f.conversationRepo, f.messageRepo, f.widgetRepo)
 }
 
 // CreateTokenService creates a TokenService instance

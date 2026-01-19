@@ -1,3 +1,10 @@
+import { DashboardContent } from "@/components/dashboard/DashboardContent"
+
+export default function DashboardPage() {
+  return <DashboardContent section="overview" />
+}
+
+/* Legacy dashboard page content retained for reference.
 "use client"
 
 import type { ReactNode } from "react"
@@ -911,3 +918,4 @@ function ColorField({
     </label>
   )
 }
+*/

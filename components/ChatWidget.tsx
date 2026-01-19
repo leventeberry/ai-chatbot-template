@@ -60,7 +60,7 @@ const FALLBACK_ERROR_MESSAGE =
 const HISTORY_CACHE_KEY = "chatbot-history";
 const WIDGET_CONFIG_CACHE_KEY = "chatbot-widget-config";
 const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
-const DEFAULT_WIDGET_TITLE = "AI Assistant";
+const DEFAULT_WIDGET_TITLE = "Chexi";
 const DEFAULT_WELCOME_MESSAGE = "I am here to help answer your questions. Ask me anything!";
 
 export function ChatWidget() {

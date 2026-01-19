@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import {
   Activity,
   Gauge,
@@ -21,6 +22,34 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
+const navItems = [
+  {
+    title: "Overview",
+    url: "/dashboard/overview",
+    icon: Gauge,
+  },
+  {
+    title: "Widget Settings",
+    url: "/dashboard/settings",
+    icon: Settings,
+  },
+  {
+    title: "Tokens",
+    url: "/dashboard/tokens",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Analytics",
+    url: "/dashboard/analytics",
+    icon: Activity,
+  },
+  {
+    title: "Conversations",
+    url: "/dashboard/conversations",
+    icon: MessageSquareText,
+  },
+]
+
 const data = {
   user: {
     name: "Client Admin",
@@ -39,34 +68,6 @@ const data = {
       plan: "Trial",
     },
   ],
-  navMain: [
-    {
-      title: "Overview",
-      url: "#overview",
-      icon: Gauge,
-      isActive: true,
-    },
-    {
-      title: "Widget Settings",
-      url: "#settings",
-      icon: Settings,
-    },
-    {
-      title: "Tokens",
-      url: "#tokens",
-      icon: ShieldCheck,
-    },
-    {
-      title: "Analytics",
-      url: "#analytics",
-      icon: Activity,
-    },
-    {
-      title: "Conversations",
-      url: "#conversations",
-      icon: MessageSquareText,
-    },
-  ],
   projects: [
     {
       name: "Documentation",
@@ -82,13 +83,21 @@ const data = {
 }
 
 export function AppSidebar() {
+  const pathname = usePathname()
+  const navMain = navItems.map((item) => ({
+    ...item,
+    isActive:
+      pathname === item.url ||
+      (item.url === "/dashboard/overview" && pathname === "/dashboard"),
+  }))
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>

@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-.PHONY: help build run test test-coverage clean install deps swagger swag \
+.PHONY: help build run test test-coverage clean install deps swagger swag seed docker-seed \
 	docker-dev docker-dev-build docker-up docker-down docker-down-volumes docker-logs \
 	docker-logs-api docker-logs-db docker-logs-redis docker-logs-redis-commander docker-logs-pgadmin \
 	docker-restart docker-rebuild docker-ps docker-shell-api docker-shell-db docker-shell-redis \
@@ -52,6 +52,10 @@ test-coverage: ## Run API tests with coverage
 	@echo "$(GREEN)Coverage report generated: $(SERVER_DIR)/coverage.html$(NC)"
 
 clean: ## Clean API build artifacts
+seed: ## Seed database with sample users
+	@echo "$(GREEN)Seeding database...$(NC)"
+	@cd $(SERVER_DIR) && $(GO) run ./cmd/seed
+
 	@echo "$(GREEN)Cleaning build artifacts...$(NC)"
 	@rm -f $(SERVER_DIR)/$(APP_NAME)
 	@rm -f $(SERVER_DIR)/$(APP_NAME).exe
@@ -124,6 +128,9 @@ docker-shell-db: ## Open PostgreSQL shell in database container
 
 docker-shell-redis: ## Open Redis CLI in Redis container
 	$(DOCKER_COMPOSE) exec redis redis-cli
+
+docker-seed: ## Seed database inside Docker API container
+	$(DOCKER_COMPOSE) exec api go run ./cmd/seed
 
 docker-open-redis-commander: ## Open Redis Commander in browser
 	@echo "$(GREEN)Opening Redis Commander at http://localhost:8081$(NC)"
