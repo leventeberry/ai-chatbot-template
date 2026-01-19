@@ -84,6 +84,10 @@ Set `AI_INTEGRATIONS_OPENAI_API_KEY` (and optionally
 environment or a `.env` file before running Docker so the Go server can reach
 OpenAI.
 
+Global assistant branding:
+- `Chexi AI Assistant` is the default assistant name.
+- Set `NEXT_PUBLIC_CHEXI_AVATAR_URL` to use a global avatar image for the widget.
+
 Widget auth (Phase 1):
 - Set `WIDGET_AUTH_DISABLED=false` to enforce token auth.
 - Provide `WIDGET_TOKEN`, `WIDGET_TENANT_ID`, and `WIDGET_ID` in the API env.
