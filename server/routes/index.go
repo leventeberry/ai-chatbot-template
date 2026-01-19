@@ -31,15 +31,33 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 		})
 	})
 
-	// Health check endpoint
-	// @Summary      Health check
-	// @Description  Comprehensive health check verifying database and Redis connectivity
+	// Liveness endpoint
+	// @Summary      Liveness check
+	// @Description  Basic liveness endpoint used for container checks
 	// @Tags         health
 	// @Accept       json
 	// @Produce      json
-	// @Success      200  {object}  map[string]interface{}  "All systems healthy"
+	// @Success      200  {object}  map[string]interface{}  "Service is alive"
+	// @Router       /healthz [get]
+	router.GET("/healthz", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "alive",
+			"timestamp": time.Now().Unix(),
+		})
+	})
+
+	// Readiness endpoint
+	// @Summary      Readiness check
+	// @Description  Verifies database and Redis connectivity before accepting traffic
+	// @Tags         health
+	// @Accept       json
+	// @Produce      json
+	// @Success      200  {object}  map[string]interface{}  "All systems ready"
 	// @Failure      503  {object}  map[string]interface{}  "Service unavailable"
-	// @Router       /health [get]
+	// @Router       /readyz [get]
+	router.GET("/readyz", healthCheckHandler(c))
+
+	// Backwards-compatible health endpoint
 	router.GET("/health", healthCheckHandler(c))
 
 	// Widget chat endpoints

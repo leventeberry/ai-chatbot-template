@@ -37,6 +37,24 @@ Build and run the full stack from the repo root:
 docker compose up --build
 ```
 
+For local configuration, copy `env.example` to `.env` and edit as needed:
+
+```bash
+cp env.example .env
+```
+
+Run the dev override (hot reload + volume mounts):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+Start admin tools (pgAdmin + Redis Commander) only when needed:
+
+```bash
+docker compose --profile tools up --build
+```
+
 Or use the Makefile shortcuts:
 
 ```bash

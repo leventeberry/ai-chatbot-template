@@ -1,30 +1,45 @@
+x-api-env: &api-env
+  DB_USER: ${POSTGRES_USER:-goapi_user}
+  DB_PASS: ${POSTGRES_PASSWORD:-goapi_password}
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_NAME: ${POSTGRES_DB:-goapi}
+  GOMODCACHE: /go/pkg/mod
+  GOCACHE: /go/cache
+  JWT_SECRET: ${JWT_SECRET:-change_this_to_a_secure_random_string_in_production}
+  PORT: 8080
+  REDIS_ENABLED: "true"
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: ""
+  WIDGET_AUTH_DISABLED: "true"
+  DEMO_WIDGET_TOKEN: ${DEMO_WIDGET_TOKEN:-}
+  DEMO_WIDGET_TENANT_ID: ${DEMO_WIDGET_TENANT_ID:-}
+  DEMO_WIDGET_ID: ${DEMO_WIDGET_ID:-}
+  DEMO_ADMIN_TOKEN: ${DEMO_ADMIN_TOKEN:-}
+  AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY}
+  AI_INTEGRATIONS_OPENAI_BASE_URL: ${AI_INTEGRATIONS_OPENAI_BASE_URL}
+  AI_INTEGRATIONS_OPENAI_MODEL: ${AI_INTEGRATIONS_OPENAI_MODEL}
+
+x-web-env: &web-env
+  API_BASE_URL: ${API_BASE_URL:-http://api:8080}
+  DOCKER_ENV: "true"
+  WATCHPACK_POLLING: "true"
+
 services:
   api:
     build:
       context: ./server
       dockerfile: Dockerfile
       target: builder
-    command: sh -c "go mod download && go run ."
+    command: sh -c "go mod download && go install github.com/air-verse/air@latest && air -c .air.toml"
     working_dir: /app
     restart: "no"
-    environment:
-      DB_USER: goapi_user
-      DB_PASS: goapi_password
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: goapi
-      JWT_SECRET: ${JWT_SECRET:-change_this_to_a_secure_random_string_in_production}
-      PORT: 8080
-      REDIS_ENABLED: "true"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ""
-      AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY}
-      AI_INTEGRATIONS_OPENAI_BASE_URL: ${AI_INTEGRATIONS_OPENAI_BASE_URL}
-      AI_INTEGRATIONS_OPENAI_MODEL: ${AI_INTEGRATIONS_OPENAI_MODEL}
+    environment: *api-env
     volumes:
       - ./server:/app
       - go_api_mod_cache:/go/pkg/mod
+      - go_api_build_cache:/go/cache
     ports:
       - "8080:8080"
     depends_on:
@@ -32,6 +47,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/readyz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       goapi_network:
         aliases:
@@ -41,20 +62,34 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run dev -- --hostname 0.0.0.0 --port 3000
-    environment:
-      API_BASE_URL: http://api:8080
+      target: base
+    command: sh -c "if [ ! -x node_modules/.bin/next ]; then npm ci; fi && npm run dev -- --hostname 0.0.0.0 --port 3000"
+    working_dir: /app
+    environment: *web-env
     volumes:
       - .:/app
-      - /app/node_modules
-      - /app/.next
+      - node_modules_cache:/app/node_modules
+      - next_cache:/app/.next
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - goapi_network
 
 volumes:
   go_api_mod_cache:
+    driver: local
+  go_api_build_cache:
+    driver: local
+  node_modules_cache:
+    driver: local
+  next_cache:
     driver: local
