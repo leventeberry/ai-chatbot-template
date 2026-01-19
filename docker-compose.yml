@@ -21,7 +21,6 @@ x-web-env: &web-env
 services:
   db:
     image: postgres:16-alpine
-    container_name: goapi_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-goapi_user}
@@ -43,7 +42,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: goapi_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -61,7 +59,6 @@ services:
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: goapi_redis_commander
     restart: unless-stopped
     profiles:
       - tools
@@ -79,7 +76,6 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: goapi_pgadmin
     restart: unless-stopped
     profiles:
       - tools
@@ -102,7 +98,6 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: goapi_api
     restart: unless-stopped
     init: true
     ports:
@@ -120,7 +115,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      goapi_network:
+      main:
         aliases:
           - api
 
@@ -142,7 +137,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - goapi_network
+      - main
 
 volumes:
   postgres_data:
@@ -153,5 +148,5 @@ volumes:
     driver: local
 
 networks:
-  goapi_network:
+  main:
     driver: bridge
