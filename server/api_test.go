@@ -10,11 +10,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"chatbot_api/container"
 	"chatbot_api/initializers"
 	"chatbot_api/routes"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var (
@@ -30,8 +31,6 @@ var (
 func TestMain(m *testing.M) {
 	// Set Gin to test mode
 	gin.SetMode(gin.TestMode)
-
-	os.Setenv("ADMIN_TOKEN", "test-admin-token")
 
 	// Initialize database (use test database if available)
 	initializers.Init()
@@ -76,29 +75,6 @@ func makeRequest(method, url string, body interface{}, token string) (*httptest.
 	return w, nil
 }
 
-// Helper function to make admin requests
-func makeAdminRequest(method, url string, body interface{}) (*httptest.ResponseRecorder, error) {
-	var reqBody io.Reader
-	if body != nil {
-		jsonData, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		reqBody = bytes.NewBuffer(jsonData)
-	}
-
-	req, err := http.NewRequest(method, url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Admin-Token", "test-admin-token")
-
-	w := httptest.NewRecorder()
-	testRouter.ServeHTTP(w, req)
-	return w, nil
-}
 
 // Helper function to extract user ID from user object
 func getIDFromUser(user interface{}) int {
@@ -258,11 +234,11 @@ func TestLoginInvalidCredentials(t *testing.T) {
 
 // Test 6: Get All Users (Authenticated)
 func TestGetAllUsers(t *testing.T) {
-	if userToken == "" {
-		t.Skip("User token not available")
+	if adminToken == "" {
+		t.Skip("Admin token not available")
 	}
 
-	w, err := makeRequest("GET", "/api/v1/users", nil, userToken)
+	w, err := makeRequest("GET", "/api/v1/users", nil, adminToken)
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
@@ -347,8 +323,8 @@ func TestGetNonExistentUser(t *testing.T) {
 
 // Test 10: Create User (Authenticated)
 func TestCreateUser(t *testing.T) {
-	if userToken == "" {
-		t.Skip("User token not available")
+	if adminToken == "" {
+		t.Skip("Admin token not available")
 	}
 
 	createData := map[string]interface{}{
@@ -360,7 +336,7 @@ func TestCreateUser(t *testing.T) {
 		"role":         "user",
 	}
 
-	w, err := makeRequest("POST", "/api/v1/users", createData, userToken)
+	w, err := makeRequest("POST", "/api/v1/users", createData, adminToken)
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
@@ -506,12 +482,15 @@ func TestRegisterDuplicateEmail(t *testing.T) {
 
 // Test 16: Enforce one widget per tenant
 func TestCreateWidgetDuplicateTenant(t *testing.T) {
+	if adminToken == "" {
+		t.Skip("Admin token not available")
+	}
 	tenantName := fmt.Sprintf("Test Tenant %s", uuid.NewString())
 	createTenant := map[string]interface{}{
 		"name": tenantName,
 	}
 
-	tenantRes, err := makeAdminRequest("POST", "/api/v1/admin/tenants", createTenant)
+	tenantRes, err := makeRequest("POST", "/api/v1/admin/tenants", createTenant, adminToken)
 	if err != nil {
 		t.Fatalf("Failed to create tenant: %v", err)
 	}
@@ -535,7 +514,7 @@ func TestCreateWidgetDuplicateTenant(t *testing.T) {
 		"config":         "{}",
 	}
 
-	firstRes, err := makeAdminRequest("POST", "/api/v1/admin/widgets", createWidget)
+	firstRes, err := makeRequest("POST", "/api/v1/admin/widgets", createWidget, adminToken)
 	if err != nil {
 		t.Fatalf("Failed to create widget: %v", err)
 	}
@@ -543,7 +522,7 @@ func TestCreateWidgetDuplicateTenant(t *testing.T) {
 		t.Fatalf("Expected status 201, got %d. Body: %s", firstRes.Code, firstRes.Body.String())
 	}
 
-	secondRes, err := makeAdminRequest("POST", "/api/v1/admin/widgets", createWidget)
+	secondRes, err := makeRequest("POST", "/api/v1/admin/widgets", createWidget, adminToken)
 	if err != nil {
 		t.Fatalf("Failed to create duplicate widget: %v", err)
 	}

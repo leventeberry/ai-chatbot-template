@@ -143,6 +143,34 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
     }
 }
 
+// RequireSelfOrAdmin allows access if the request targets the authenticated user or role is admin.
+// This middleware must be used after AuthMiddleware.
+func RequireSelfOrAdmin(paramName string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if exists {
+			if roleStr, ok := role.(string); ok && roleStr == "admin" {
+				c.Next()
+				return
+			}
+		}
+
+		userID, ok := c.Get("userID")
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+			return
+		}
+
+		requestedID := c.Param(paramName)
+		if requestedID == "" || userID.(string) != requestedID {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // PasswordCost defines the bcrypt hashing cost.
 // Increase this if you need stronger hashes at the expense of CPU time.
 const PasswordCost = bcrypt.DefaultCost

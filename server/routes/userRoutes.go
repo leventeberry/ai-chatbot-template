@@ -18,10 +18,10 @@ func SetupUserRoutes(router *gin.RouterGroup, c *container.Container) {
 	userGroup.Use(middleware.AuthMiddleware())
 	{
 		// Public authenticated routes (any authenticated user can access)
-		userGroup.GET("", controllers.GetUsers(c.UserService))
-		userGroup.GET("/:id", controllers.GetUser(c.UserService))
-		userGroup.POST("", controllers.CreateUser(c.UserService))
-		userGroup.PUT("/:id", controllers.UpdateUser(c.UserService))
+		userGroup.GET("", middleware.RequireRole("admin"), controllers.GetUsers(c.UserService))
+		userGroup.GET("/:id", middleware.RequireSelfOrAdmin("id"), controllers.GetUser(c.UserService))
+		userGroup.POST("", middleware.RequireRole("admin"), controllers.CreateUser(c.UserService))
+		userGroup.PUT("/:id", middleware.RequireSelfOrAdmin("id"), controllers.UpdateUser(c.UserService))
 
 		// Admin-only routes (require admin role)
 		userGroup.DELETE("/:id", middleware.RequireRole("admin"), controllers.DeleteUser(c.UserService))

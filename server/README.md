@@ -400,6 +400,7 @@ This command scans your code for Swagger annotations (comments starting with `@S
       }
     }
     ```
+  - **Note:** `api_key` is currently included for future public API support (v2) and is not used for authentication today.
   - **Valid Roles:** `user`, `admin`
 
 - **POST** `/login`
@@ -424,6 +425,7 @@ This command scans your code for Swagger annotations (comments starting with `@S
       }
     }
     ```
+  - **Note:** `api_key` is currently included for future public API support (v2) and is not used for authentication today.
 
 ### Protected Endpoints (Require Authentication)
 

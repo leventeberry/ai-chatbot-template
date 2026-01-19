@@ -5,10 +5,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"chatbot_api/models"
 	"chatbot_api/services"
+
+	"github.com/gin-gonic/gin"
 )
+
 // CreateUserInput holds the data for creating a new user
 type CreateUserInput struct {
 	TenantID  string `json:"tenant_id" binding:"required,uuid"`
@@ -265,6 +267,13 @@ func UpdateUser(userService services.UserService) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&input); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		}
+
+		if input.Role != nil {
+			if role, ok := c.Get("role"); !ok || role.(string) != "admin" {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+				return
+			}
 		}
 
 		// Validate password strength if password is being updated

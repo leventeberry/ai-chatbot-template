@@ -69,7 +69,8 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 
 	if c.DB != nil {
 		admin := v1.Group("/admin")
-		admin.Use(middleware.AdminAuthMiddleware())
+		admin.Use(middleware.AuthMiddleware())
+		admin.Use(middleware.RequireRole("admin"))
 		{
 			admin.POST("/tenants", controllers.CreateTenant(c.TenantRepository))
 			admin.POST("/widgets", controllers.CreateWidget(c.WidgetRepository))
