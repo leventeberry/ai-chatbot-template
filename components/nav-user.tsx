@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   BadgeCheck,
   Bell,
@@ -32,8 +33,21 @@ type UserInfo = {
   avatar: string
 }
 
+const AUTH_TOKEN_KEY = "auth_token"
+const AUTH_TENANT_KEY = "auth_tenant_id"
+const AUTH_WIDGET_KEY = "auth_widget_id"
+
 export function NavUser({ user }: { user: UserInfo }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    if (typeof window === "undefined") return
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(AUTH_TENANT_KEY)
+    localStorage.removeItem(AUTH_WIDGET_KEY)
+    router.push("/")
+  }
 
   return (
     <SidebarMenu>
@@ -96,7 +110,7 @@ export function NavUser({ user }: { user: UserInfo }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

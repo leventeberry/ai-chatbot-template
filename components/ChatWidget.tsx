@@ -523,10 +523,6 @@ export function ChatWidget() {
   );
 }
 
-function resolveWidgetTitle(config: WidgetConfig): string {
-  return DEFAULT_WIDGET_TITLE;
-}
-
 function resolveWidgetConfig(config: WidgetConfig): {
   title: string;
   theme: WidgetTheme | null;
@@ -535,11 +531,11 @@ function resolveWidgetConfig(config: WidgetConfig): {
   greeting: WidgetGreeting | null;
   behavior: WidgetBehavior | null;
 } {
-  const title = resolveWidgetTitle(config);
+  const fallbackTitle = config?.name?.trim() || DEFAULT_WIDGET_TITLE;
   const raw = config?.config ?? "";
   if (!raw.trim()) {
     return {
-      title,
+      title: fallbackTitle,
       theme: null,
       branding: null,
       placement: null,
@@ -550,14 +546,19 @@ function resolveWidgetConfig(config: WidgetConfig): {
 
   try {
     const parsed = JSON.parse(raw) as {
+      title?: string;
       theme?: WidgetTheme;
       branding?: WidgetBranding;
       placement?: WidgetPlacement;
       greeting?: WidgetGreeting;
       behavior?: WidgetBehavior;
     };
+    const resolvedTitle =
+      typeof parsed.title === "string" && parsed.title.trim()
+        ? parsed.title.trim()
+        : fallbackTitle;
     return {
-      title,
+      title: resolvedTitle,
       theme: parsed?.theme ?? null,
       branding: parsed?.branding ?? null,
       placement: parsed?.placement ?? null,
@@ -566,7 +567,7 @@ function resolveWidgetConfig(config: WidgetConfig): {
     };
   } catch {
     return {
-      title,
+      title: fallbackTitle,
       theme: null,
       branding: null,
       placement: null,

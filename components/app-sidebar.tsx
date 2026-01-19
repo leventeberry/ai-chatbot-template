@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import {
   Activity,
@@ -84,6 +85,15 @@ const data = {
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return null
+  }
   const navMain = navItems.map((item) => ({
     ...item,
     isActive:
