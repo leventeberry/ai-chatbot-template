@@ -177,7 +177,7 @@ func findOrCreateWidget(
 	demoOrigin string,
 ) (models.Widget, error) {
 	widget := models.Widget{}
-	if err := db.Where("tenant_id = ? AND name = ?", tenantID, name).First(&widget).Error; err != nil {
+	if err := db.Where("tenant_id = ?", tenantID).First(&widget).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return widget, err
 		}
@@ -186,11 +186,25 @@ func findOrCreateWidget(
 			allowedOrigin = demoOrigin
 		}
 		widget = models.Widget{
-			TenantID:       tenantID,
-			Name:           name,
-			AllowedOrigins: allowedOrigin,
+			TenantID:      tenantID,
+			Name:          name,
+			AllowedOrigin: allowedOrigin,
 		}
 		if err := db.Create(&widget).Error; err != nil {
+			return widget, err
+		}
+		return widget, nil
+	}
+
+	updates := map[string]interface{}{}
+	if name != "" && widget.Name != name {
+		updates["name"] = name
+	}
+	if widget.AllowedOrigin == "" && ownerEmail == adminEmail && demoOrigin != "" {
+		updates["allowed_origin"] = demoOrigin
+	}
+	if len(updates) > 0 {
+		if err := db.Model(&widget).Updates(updates).Error; err != nil {
 			return widget, err
 		}
 	}

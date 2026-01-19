@@ -8,17 +8,17 @@ import (
 )
 
 type User struct {
-    ID        int       `gorm:"primaryKey" json:"user_id"`
+	ID        int       `gorm:"primaryKey" json:"user_id"`
 	TenantID  string    `gorm:"type:uuid;index" json:"tenant_id"`
 	WidgetID  string    `gorm:"type:uuid;index" json:"widget_id"`
-    FirstName string    `json:"first_name"`
-    LastName  string    `json:"last_name"`
-    Email     string    `gorm:"uniqueIndex;not null" json:"email"`
-    PassHash  string    `json:"-"` // Excluded from JSON responses for security
-    PhoneNum  string    `json:"phone_number"`
-    Role      string    `json:"role"`
-    CreatedAt time.Time `json:"created_at"`
-    UpdatedAt time.Time `json:"updated_at"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `gorm:"uniqueIndex;not null" json:"email"`
+	PassHash  string    `json:"-"` // Excluded from JSON responses for security
+	PhoneNum  string    `json:"phone_number"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Tenant struct {
@@ -30,13 +30,13 @@ type Tenant struct {
 }
 
 type Widget struct {
-	ID             string    `gorm:"type:uuid;primaryKey" json:"id"`
-	TenantID       string    `gorm:"type:uuid;uniqueIndex;not null" json:"tenant_id"`
-	Name           string    `gorm:"not null" json:"name"`
-	AllowedOrigins string    `gorm:"type:text" json:"allowed_origins"`
-	Config         string    `gorm:"type:text" json:"config"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID            string    `gorm:"type:uuid;primaryKey" json:"id"`
+	TenantID      string    `gorm:"type:uuid;uniqueIndex;not null" json:"tenant_id"`
+	Name          string    `gorm:"not null" json:"name"`
+	AllowedOrigin string    `gorm:"type:text;column:allowed_origin" json:"allowed_origin"`
+	Config        string    `gorm:"type:text" json:"config"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type ApiKey struct {

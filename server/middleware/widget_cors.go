@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -20,14 +19,14 @@ func WidgetCORSMiddleware(widgetRepo repositories.WidgetRepository) gin.HandlerF
 			return
 		}
 
-		allowedOrigins := resolveAllowedOrigins(c, widgetRepo)
-		if len(allowedOrigins) == 0 {
+		allowedOrigin := resolveAllowedOrigin(c, widgetRepo)
+		if allowedOrigin == "" {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Next()
 			return
 		}
 
-		if !originAllowed(origin, allowedOrigins) {
+		if origin != allowedOrigin {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Origin not allowed"})
 			return
 		}
@@ -38,54 +37,26 @@ func WidgetCORSMiddleware(widgetRepo repositories.WidgetRepository) gin.HandlerF
 	}
 }
 
-func resolveAllowedOrigins(c *gin.Context, widgetRepo repositories.WidgetRepository) []string {
+func resolveAllowedOrigin(c *gin.Context, widgetRepo repositories.WidgetRepository) string {
 	if widgetRepo != nil {
 		if widgetID, ok := c.Get("widgetId"); ok {
 			if widgetIDStr, ok := widgetID.(string); ok && widgetIDStr != "" {
 				widget, err := widgetRepo.FindByID(widgetIDStr)
 				if err == nil {
-					return parseOrigins(widget.AllowedOrigins)
+					return normalizeAllowedOrigin(widget.AllowedOrigin)
 				}
 			}
 		}
 	}
 
-	return parseOrigins(os.Getenv("CORS_ALLOW_ORIGINS"))
+	return normalizeAllowedOrigin(os.Getenv("CORS_ALLOW_ORIGIN"))
 }
 
-func originAllowed(origin string, allowed []string) bool {
-	for _, candidate := range allowed {
-		if origin == candidate {
-			return true
-		}
-	}
-	return false
-}
-
-func parseOrigins(raw string) []string {
+func normalizeAllowedOrigin(raw string) string {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
-		return nil
+		return ""
 	}
 
-	if strings.HasPrefix(trimmed, "[") {
-		var parsed []string
-		if err := json.Unmarshal([]byte(trimmed), &parsed); err == nil {
-			return normalizeOrigins(parsed)
-		}
-	}
-
-	parts := strings.Split(trimmed, ",")
-	return normalizeOrigins(parts)
-}
-
-func normalizeOrigins(origins []string) []string {
-	result := make([]string, 0, len(origins))
-	for _, origin := range origins {
-		value := strings.TrimSpace(origin)
-		if value != "" {
-			result = append(result, value)
-		}
-	}
-	return result
+	return strings.Split(trimmed, ",")[0]
 }

@@ -22,7 +22,6 @@ type WidgetConfig = {
   branding?: {
     logoUrl?: string
     showLogo?: boolean
-    avatarUrl?: string
   }
   placement?: {
     position?: "bottom-right" | "bottom-left"
@@ -44,7 +43,7 @@ type WidgetConfig = {
 type Widget = {
   id: string
   name: string
-  allowed_origins: string
+  allowed_origin: string
   config: string
   updated_at: string
 }
@@ -93,7 +92,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
 
   const [widget, setWidget] = useState<Widget | null>(null)
   const [widgetName, setWidgetName] = useState("")
-  const [allowedOrigins, setAllowedOrigins] = useState("")
+  const [allowedOrigin, setAllowedOrigin] = useState("")
 
   const [headerBackground, setHeaderBackground] = useState("#4f46e5")
   const [headerText, setHeaderText] = useState("#ffffff")
@@ -101,7 +100,6 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const [buttonText, setButtonText] = useState("#ffffff")
   const [logoUrl, setLogoUrl] = useState("")
   const [showLogo, setShowLogo] = useState(true)
-  const [avatarUrl, setAvatarUrl] = useState("")
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">(
     "bottom-right"
   )
@@ -203,7 +201,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       const data = (await res.json()) as Widget
       setWidget(data)
       setWidgetName(data.name || "")
-      setAllowedOrigins(data.allowed_origins || "")
+      setAllowedOrigin(data.allowed_origin || "")
       const parsed = parseWidgetConfig(data.config)
       setHeaderBackground(parsed.theme?.headerBackground || "#4f46e5")
       setHeaderText(parsed.theme?.headerText || "#ffffff")
@@ -211,7 +209,6 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       setButtonText(parsed.theme?.buttonText || "#ffffff")
       setLogoUrl(parsed.branding?.logoUrl || "")
       setShowLogo(parsed.branding?.showLogo ?? true)
-      setAvatarUrl(parsed.branding?.avatarUrl || "")
       setPosition(parsed.placement?.position || "bottom-right")
       setOffsetX(parsed.placement?.offsetX ?? 24)
       setOffsetY(parsed.placement?.offsetY ?? 24)
@@ -288,9 +285,9 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     setSaveMessage(null)
     setError(null)
 
-    const normalizedOrigin = normalizeAllowedOrigin(allowedOrigins)
+    const normalizedOrigin = normalizeAllowedOrigin(allowedOrigin)
     if (!normalizedOrigin && currentOrigin) {
-      setAllowedOrigins(currentOrigin)
+      setAllowedOrigin(currentOrigin)
     }
 
     const config: WidgetConfig = {
@@ -304,7 +301,6 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       branding: {
         logoUrl: logoUrl || undefined,
         showLogo,
-        avatarUrl: avatarUrl || undefined,
       },
       placement: {
         position,
@@ -328,7 +324,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
         method: "PATCH",
         body: JSON.stringify({
           name: widgetName,
-          allowed_origins: normalizeAllowedOrigin(allowedOrigins) || currentOrigin,
+          allowed_origin: normalizeAllowedOrigin(allowedOrigin) || currentOrigin,
           config: JSON.stringify(config),
         }),
       })
@@ -407,7 +403,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
 
   const appendCurrentOrigin = () => {
     if (!currentOrigin) return
-    setAllowedOrigins(currentOrigin)
+  setAllowedOrigin(currentOrigin)
   }
 
   return (
@@ -479,9 +475,9 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                   <Field label="Allowed Origin">
                     <textarea
                       rows={2}
-                      value={allowedOrigins}
+                      value={allowedOrigin}
                       onChange={(event) =>
-                        setAllowedOrigins(normalizeAllowedOrigin(event.target.value))
+                        setAllowedOrigin(normalizeAllowedOrigin(event.target.value))
                       }
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       placeholder="https://example.com"
@@ -577,12 +573,6 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                         placeholder="Logo URL"
                       />
-                      <input
-                        value={avatarUrl}
-                        onChange={(event) => setAvatarUrl(event.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        placeholder="Avatar URL (optional)"
-                      />
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -636,7 +626,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                 </button>
                 {saveMessage && <span className="text-sm text-emerald-600">{saveMessage}</span>}
                 <span className="text-xs text-muted-foreground">
-                  Saving allowed origins enforces widget CORS checks.
+                  Saving the allowed origin enforces widget CORS checks.
                 </span>
               </div>
             </section>

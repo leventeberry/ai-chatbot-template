@@ -56,7 +56,7 @@ type WidgetConfig = {
 type Widget = {
   id: string
   name: string
-  allowed_origins: string
+  allowed_origin: string
   config: string
   updated_at: string
 }
@@ -105,7 +105,7 @@ export default function DashboardPage() {
 
   const [widget, setWidget] = useState<Widget | null>(null)
   const [widgetName, setWidgetName] = useState("")
-  const [allowedOrigins, setAllowedOrigins] = useState("")
+  const [allowedOrigin, setAllowedOrigin] = useState("")
 
   const [headerBackground, setHeaderBackground] = useState("#4f46e5")
   const [headerText, setHeaderText] = useState("#ffffff")
@@ -200,7 +200,7 @@ export default function DashboardPage() {
       const data = (await res.json()) as Widget
       setWidget(data)
       setWidgetName(data.name || "")
-      setAllowedOrigins(data.allowed_origins || "")
+      setAllowedOrigin(data.allowed_origin || "")
       const parsed = parseWidgetConfig(data.config)
       setHeaderBackground(parsed.theme?.headerBackground || "#4f46e5")
       setHeaderText(parsed.theme?.headerText || "#ffffff")
@@ -283,7 +283,7 @@ export default function DashboardPage() {
     setSaveMessage(null)
     setError(null)
 
-    const normalizedOrigin = normalizeAllowedOrigin(allowedOrigins)
+    const normalizedOrigin = normalizeAllowedOrigin(allowedOrigin)
     if (!normalizedOrigin && currentOrigin) {
       setAllowedOrigins(currentOrigin)
     }
@@ -321,7 +321,7 @@ export default function DashboardPage() {
         method: "PATCH",
         body: JSON.stringify({
           name: widgetName,
-          allowed_origins: normalizeAllowedOrigin(allowedOrigins) || currentOrigin,
+          allowed_origin: normalizeAllowedOrigin(allowedOrigin) || currentOrigin,
           config: JSON.stringify(config),
         }),
       })
@@ -486,9 +486,9 @@ export default function DashboardPage() {
                     <Field label="Allowed Origin">
                       <textarea
                         rows={2}
-                        value={allowedOrigins}
+                        value={allowedOrigin}
                         onChange={(event) =>
-                          setAllowedOrigins(normalizeAllowedOrigin(event.target.value))
+                          setAllowedOrigin(normalizeAllowedOrigin(event.target.value))
                         }
                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                         placeholder="https://example.com"

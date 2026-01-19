@@ -22,7 +22,7 @@ type ChatMessage = {
 type WidgetConfig = {
   id: string;
   name: string;
-  allowed_origins: string;
+  allowed_origin: string;
   config: string;
 };
 
@@ -60,8 +60,10 @@ const FALLBACK_ERROR_MESSAGE =
 const HISTORY_CACHE_KEY = "chatbot-history";
 const WIDGET_CONFIG_CACHE_KEY = "chatbot-widget-config";
 const WIDGET_AUTH_TOKEN = process.env.NEXT_PUBLIC_WIDGET_TOKEN;
-const DEFAULT_WIDGET_TITLE = "Chexi";
+const DEFAULT_WIDGET_TITLE = "Chexi AI Assistant";
 const DEFAULT_WELCOME_MESSAGE = "I am here to help answer your questions. Ask me anything!";
+const GLOBAL_ASSISTANT_AVATAR_URL =
+  process.env.NEXT_PUBLIC_CHEXI_AVATAR_URL || "";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -86,6 +88,8 @@ export function ChatWidget() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasHydratedHistoryRef = useRef(false);
   const hasAutoOpenedRef = useRef(false);
+
+  const assistantAvatarUrl = GLOBAL_ASSISTANT_AVATAR_URL || undefined;
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -389,9 +393,9 @@ export function ChatWidget() {
                       >
                         {isAi && (
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1 overflow-hidden">
-                            {widgetBranding?.avatarUrl ? (
+                            {assistantAvatarUrl ? (
                               <img
-                                src={widgetBranding.avatarUrl}
+                                src={assistantAvatarUrl}
                                 alt="Assistant avatar"
                                 className="w-full h-full object-cover"
                               />
@@ -520,18 +524,7 @@ export function ChatWidget() {
 }
 
 function resolveWidgetTitle(config: WidgetConfig): string {
-  const raw = config?.config ?? "";
-  if (raw.trim()) {
-    try {
-      const parsed = JSON.parse(raw) as { title?: string; name?: string };
-      if (parsed?.title) return parsed.title;
-      if (parsed?.name) return parsed.name;
-    } catch {
-      // ignore invalid widget config JSON
-    }
-  }
-
-  return config?.name || DEFAULT_WIDGET_TITLE;
+  return DEFAULT_WIDGET_TITLE;
 }
 
 function resolveWidgetConfig(config: WidgetConfig): {

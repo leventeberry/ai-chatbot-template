@@ -18,20 +18,20 @@ type CreateTenantRequest struct {
 }
 
 type CreateWidgetRequest struct {
-	TenantID       string `json:"tenant_id"`
-	Name           string `json:"name"`
-	AllowedOrigins string `json:"allowed_origins"`
-	Config         string `json:"config"`
+	TenantID      string `json:"tenant_id"`
+	Name          string `json:"name"`
+	AllowedOrigin string `json:"allowed_origin"`
+	Config        string `json:"config"`
 }
 
 type WidgetResponse struct {
-	ID             string `json:"id"`
-	TenantID       string `json:"tenant_id"`
-	Name           string `json:"name"`
-	AllowedOrigins string `json:"allowed_origins"`
-	Config         string `json:"config"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
+	ID            string `json:"id"`
+	TenantID      string `json:"tenant_id"`
+	Name          string `json:"name"`
+	AllowedOrigin string `json:"allowed_origin"`
+	Config        string `json:"config"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
 }
 
 type CreateWidgetTokenRequest struct {
@@ -39,9 +39,9 @@ type CreateWidgetTokenRequest struct {
 }
 
 type UpdateWidgetRequest struct {
-	Name           *string `json:"name"`
-	AllowedOrigins *string `json:"allowed_origins"`
-	Config         *string `json:"config"`
+	Name          *string `json:"name"`
+	AllowedOrigin *string `json:"allowed_origin"`
+	Config        *string `json:"config"`
 }
 
 type WidgetTokenResponse struct {
@@ -104,10 +104,18 @@ func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		}
 
 		widget := &models.Widget{
-			TenantID:       input.TenantID,
-			Name:           input.Name,
-			AllowedOrigins: input.AllowedOrigins,
-			Config:         input.Config,
+			TenantID:      input.TenantID,
+			Name:          input.Name,
+			AllowedOrigin: input.AllowedOrigin,
+			Config:        input.Config,
+		}
+
+		if existing, err := widgetRepo.FindByTenantID(input.TenantID); err == nil && existing != nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "widget already exists for tenant"})
+			return
+		} else if err != nil && err != repositories.ErrWidgetNotFound {
+			handleServiceError(c, err)
+			return
 		}
 
 		if err := widgetRepo.Create(widget); err != nil {
@@ -150,13 +158,13 @@ func GetWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, WidgetResponse{
-			ID:             widget.ID,
-			TenantID:       widget.TenantID,
-			Name:           widget.Name,
-			AllowedOrigins: widget.AllowedOrigins,
-			Config:         widget.Config,
-			CreatedAt:      widget.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:      widget.UpdatedAt.Format(time.RFC3339),
+			ID:            widget.ID,
+			TenantID:      widget.TenantID,
+			Name:          widget.Name,
+			AllowedOrigin: widget.AllowedOrigin,
+			Config:        widget.Config,
+			CreatedAt:     widget.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:     widget.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 }
@@ -201,8 +209,8 @@ func UpdateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		if input.Name != nil {
 			widget.Name = *input.Name
 		}
-		if input.AllowedOrigins != nil {
-			widget.AllowedOrigins = *input.AllowedOrigins
+		if input.AllowedOrigin != nil {
+			widget.AllowedOrigin = *input.AllowedOrigin
 		}
 		if input.Config != nil {
 			widget.Config = *input.Config

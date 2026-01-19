@@ -16,7 +16,7 @@ type WidgetSessionResponse struct {
 type WidgetConfigResponse struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
-	AllowedOrigins string `json:"allowed_origins"`
+	AllowedOrigin  string `json:"allowed_origin"`
 	Config         string `json:"config"`
 }
 
@@ -69,7 +69,7 @@ func GetWidgetConfig(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		c.JSON(http.StatusOK, WidgetConfigResponse{
 			ID:             widget.ID,
 			Name:           widget.Name,
-			AllowedOrigins: widget.AllowedOrigins,
+			AllowedOrigin:  widget.AllowedOrigin,
 			Config:         widget.Config,
 		})
 	}

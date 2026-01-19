@@ -46,3 +46,15 @@ func (r *widgetRepository) FindByID(id string) (*models.Widget, error) {
 	}
 	return &widget, nil
 }
+
+func (r *widgetRepository) FindByTenantID(tenantID string) (*models.Widget, error) {
+	var widget models.Widget
+	err := r.db.First(&widget, "tenant_id = ?", tenantID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrWidgetNotFound
+		}
+		return nil, fmt.Errorf("failed to find widget by tenant ID %s: %w", tenantID, err)
+	}
+	return &widget, nil
+}

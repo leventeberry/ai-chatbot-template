@@ -43,6 +43,7 @@ type MessageRepository interface {
 // WidgetRepository defines the interface for widget operations
 type WidgetRepository interface {
 	FindByID(id string) (*models.Widget, error)
+	FindByTenantID(tenantID string) (*models.Widget, error)
 	Create(widget *models.Widget) error
 	Update(widget *models.Widget) error
 }

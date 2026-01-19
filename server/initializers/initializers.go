@@ -101,6 +101,27 @@ func connectDB() {
 
 // migrateDB runs AutoMigrate on all models
 func migrateDB() {
+	var duplicateTenants []struct {
+		TenantID string
+		Count    int64
+	}
+
+	if DB.Migrator().HasTable(&models.Widget{}) {
+		if err := DB.Model(&models.Widget{}).
+			Select("tenant_id, COUNT(*) as count").
+			Group("tenant_id").
+			Having("COUNT(*) > 1").
+			Scan(&duplicateTenants).Error; err != nil {
+			logger.Log.Fatal().Err(err).Msg("Failed to validate widget uniqueness before migration")
+		}
+	}
+
+	if len(duplicateTenants) > 0 {
+		logger.Log.Fatal().
+			Interface("duplicate_tenants", duplicateTenants).
+			Msg("Multiple widgets found for a tenant. Resolve duplicates before enforcing the unique constraint.")
+	}
+
 	if err := DB.AutoMigrate(
 		&models.User{},
 		&models.Tenant{},
