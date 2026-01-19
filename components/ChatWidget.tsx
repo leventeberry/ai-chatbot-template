@@ -112,7 +112,7 @@ export function ChatWidget() {
       }
 
       try {
-        const res = await fetch("/api/widget/config", {
+        const res = await fetch("/api/v1/widget/config", {
           headers: WIDGET_AUTH_TOKEN
             ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
             : undefined,
@@ -153,7 +153,7 @@ export function ChatWidget() {
 
     const createSession = async () => {
       try {
-        const res = await fetch("/api/widget/session", {
+        const res = await fetch("/api/v1/widget/session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -199,7 +199,7 @@ export function ChatWidget() {
       setIsHistoryLoading(true);
       try {
         const res = await fetch(
-          `/api/chat/history?session_id=${encodeURIComponent(sessionId)}`,
+          `/api/v1/chat/history?session_id=${encodeURIComponent(sessionId)}`,
           {
             credentials: "include",
             headers: WIDGET_AUTH_TOKEN
@@ -260,7 +260,7 @@ export function ChatWidget() {
     setIsSending(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/v1/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -196,7 +196,7 @@ export default function DashboardPage() {
   const loadWidget = async () => {
     if (!widgetId) return
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}`)
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`)
       const data = (await res.json()) as Widget
       setWidget(data)
       setWidgetName(data.name || "")
@@ -224,7 +224,7 @@ export default function DashboardPage() {
   const loadTokens = async () => {
     if (!widgetId) return
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`)
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens`)
       const data = (await res.json()) as TokenSummary[]
       setTokens(data)
     } catch (err) {
@@ -240,7 +240,7 @@ export default function DashboardPage() {
       const from = new Date()
       from.setDate(to.getDate() - Number(days))
       const res = await apiFetch(
-        `/api/dashboard/widgets/${widgetId}/analytics?from=${from.toISOString()}&to=${to.toISOString()}`
+        `/api/v1/dashboard/widgets/${widgetId}/analytics?from=${from.toISOString()}&to=${to.toISOString()}`
       )
       const data = (await res.json()) as Analytics
       setAnalytics(data)
@@ -255,7 +255,7 @@ export default function DashboardPage() {
     if (!widgetId) return
     try {
       const res = await apiFetch(
-        `/api/dashboard/widgets/${widgetId}/conversations?limit=10`
+        `/api/v1/dashboard/widgets/${widgetId}/conversations?limit=10`
       )
       const data = (await res.json()) as ConversationSummary[]
       setConversations(data)
@@ -267,7 +267,9 @@ export default function DashboardPage() {
   const loadConversationMessages = async (conversationId: string) => {
     setConversationLoading(true)
     try {
-      const res = await apiFetch(`/api/dashboard/conversations/${conversationId}/messages`)
+      const res = await apiFetch(
+        `/api/v1/dashboard/conversations/${conversationId}/messages`
+      )
       const data = (await res.json()) as ConversationMessage[]
       setConversationMessages(data)
     } catch (err) {
@@ -317,7 +319,7 @@ export default function DashboardPage() {
     }
 
     try {
-      await apiFetch(`/api/dashboard/widgets/${widgetId}`, {
+      await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`, {
         method: "PATCH",
         body: JSON.stringify({
           name: widgetName,
@@ -340,7 +342,7 @@ export default function DashboardPage() {
     setTokenError(null)
     setCreatedToken(null)
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`, {
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens`, {
         method: "POST",
         body: JSON.stringify({ name: tokenName }),
       })
@@ -361,7 +363,9 @@ export default function DashboardPage() {
     setTokenError(null)
     setCreatedToken(null)
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/rotate`, {
+      const res = await apiFetch(
+        `/api/v1/dashboard/widgets/${widgetId}/tokens/rotate`,
+        {
         method: "POST",
         body: JSON.stringify({ name: tokenName }),
       })
@@ -381,7 +385,7 @@ export default function DashboardPage() {
     setTokenBusy(true)
     setTokenError(null)
     try {
-      await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/${tokenId}`, {
+      await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens/${tokenId}`, {
         method: "DELETE",
       })
       await loadTokens()

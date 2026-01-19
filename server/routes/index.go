@@ -16,6 +16,10 @@ import (
 // SetupRoutes registers all application routes on the provided Gin engine
 // Uses dependency injection container for all dependencies
 func SetupRoutes(router *gin.Engine, c *container.Container) {
+	// API v1 routes group
+	// All API endpoints are versioned under /api/v1 for backward compatibility
+	v1 := router.Group("/api/v1")
+
 	// Home / welcome message
 	// @Summary      Welcome message
 	// @Description  Returns API welcome message
@@ -23,8 +27,8 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 	// @Accept       json
 	// @Produce      json
 	// @Success      200  {object}  map[string]interface{}  "API is running"
-	// @Router       / [get]
-	router.GET("/", func(c *gin.Context) {
+	// @Router       /api/v1/ [get]
+	v1.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Welcome!",
 			"status":  http.StatusOK,
@@ -38,8 +42,8 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 	// @Accept       json
 	// @Produce      json
 	// @Success      200  {object}  map[string]interface{}  "Service is alive"
-	// @Router       /healthz [get]
-	router.GET("/healthz", func(c *gin.Context) {
+	// @Router       /api/v1/healthz [get]
+	v1.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "alive",
 			"timestamp": time.Now().Unix(),
@@ -54,17 +58,17 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 	// @Produce      json
 	// @Success      200  {object}  map[string]interface{}  "All systems ready"
 	// @Failure      503  {object}  map[string]interface{}  "Service unavailable"
-	// @Router       /readyz [get]
-	router.GET("/readyz", healthCheckHandler(c))
+	// @Router       /api/v1/readyz [get]
+	v1.GET("/readyz", healthCheckHandler(c))
 
 	// Backwards-compatible health endpoint
-	router.GET("/health", healthCheckHandler(c))
+	v1.GET("/health", healthCheckHandler(c))
 
 	// Widget chat endpoints
-	SetupChatRoutes(router, c)
+	SetupChatRoutes(v1, c)
 
 	if c.DB != nil {
-		admin := router.Group("/api/admin")
+		admin := v1.Group("/admin")
 		admin.Use(middleware.AdminAuthMiddleware())
 		{
 			admin.POST("/tenants", controllers.CreateTenant(c.TenantRepository))
@@ -78,45 +82,40 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 		}
 	}
 
-	// API v1 routes group
-	// All API endpoints are versioned under /api/v1 for backward compatibility
 	if authEnabled() && c.AuthService != nil {
-		v1 := router.Group("/api/v1")
-		{
-			// Authentication routes
-			// @Summary      Login user
-			// @Description  Authenticate a user with email and password, returns JWT token
-			// @Tags         authentication
-			// @Accept       json
-			// @Produce      json
-			// @Param        credentials  body      RequestUserInput  true  "Login credentials"
-			// @Success      200          {object}  map[string]interface{}  "Login successful"
-			// @Failure      400          {object}  map[string]string  "Invalid request"
-			// @Failure      401          {object}  map[string]string  "Invalid credentials"
-			// @Failure      500          {object}  map[string]string  "Server error"
-			// @Router       /api/v1/login [post]
-			v1.POST("/login", controllers.LoginUser(c.AuthService))
+		// Authentication routes
+		// @Summary      Login user
+		// @Description  Authenticate a user with email and password, returns JWT token
+		// @Tags         authentication
+		// @Accept       json
+		// @Produce      json
+		// @Param        credentials  body      RequestUserInput  true  "Login credentials"
+		// @Success      200          {object}  map[string]interface{}  "Login successful"
+		// @Failure      400          {object}  map[string]string  "Invalid request"
+		// @Failure      401          {object}  map[string]string  "Invalid credentials"
+		// @Failure      500          {object}  map[string]string  "Server error"
+		// @Router       /api/v1/login [post]
+		v1.POST("/login", controllers.LoginUser(c.AuthService))
 
-			// @Summary      Register new user
-			// @Description  Create a new user account and receive JWT token
-			// @Tags         authentication
-			// @Accept       json
-			// @Produce      json
-			// @Param        user  body      SignupUserInput  true  "User registration data"
-			// @Success      200   {object}  map[string]interface{}  "Registration successful"
-			// @Failure      400   {object}  map[string]string  "Invalid request"
-			// @Failure      409   {object}  map[string]string  "Email already registered"
-			// @Failure      500   {object}  map[string]string  "Server error"
-			// @Router       /api/v1/register [post]
-			v1.POST("/register", controllers.SignupUser(c.AuthService))
+		// @Summary      Register new user
+		// @Description  Create a new user account and receive JWT token
+		// @Tags         authentication
+		// @Accept       json
+		// @Produce      json
+		// @Param        user  body      SignupUserInput  true  "User registration data"
+		// @Success      200   {object}  map[string]interface{}  "Registration successful"
+		// @Failure      400   {object}  map[string]string  "Invalid request"
+		// @Failure      409   {object}  map[string]string  "Email already registered"
+		// @Failure      500   {object}  map[string]string  "Server error"
+		// @Router       /api/v1/register [post]
+		v1.POST("/register", controllers.SignupUser(c.AuthService))
 
-			// User routes setup
-			SetupUserRoutes(v1, c)
-		}
+		// User routes setup
+		SetupUserRoutes(v1, c)
 	}
 
 	if authEnabled() && c.AuthService != nil {
-		dashboard := router.Group("/api/dashboard")
+		dashboard := v1.Group("/dashboard")
 		dashboard.Use(middleware.AuthMiddleware())
 		{
 			widgetGroup := dashboard.Group("/widgets/:id")

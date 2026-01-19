@@ -27,7 +27,7 @@ type WidgetConfigResponse struct {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  WidgetSessionResponse
-// @Router       /api/widget/session [post]
+// @Router       /api/v1/widget/session [post]
 func CreateWidgetSession() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, WidgetSessionResponse{
@@ -45,7 +45,7 @@ func CreateWidgetSession() gin.HandlerFunc {
 // @Success      200  {object}  WidgetConfigResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
-// @Router       /api/widget/config [get]
+// @Router       /api/v1/widget/config [get]
 func GetWidgetConfig(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if widgetRepo == nil {

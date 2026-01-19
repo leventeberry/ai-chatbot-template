@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"chatbot_api/container"
 	"chatbot_api/initializers"
 	"chatbot_api/routes"
@@ -29,6 +30,8 @@ var (
 func TestMain(m *testing.M) {
 	// Set Gin to test mode
 	gin.SetMode(gin.TestMode)
+
+	os.Setenv("ADMIN_TOKEN", "test-admin-token")
 
 	// Initialize database (use test database if available)
 	initializers.Init()
@@ -73,6 +76,30 @@ func makeRequest(method, url string, body interface{}, token string) (*httptest.
 	return w, nil
 }
 
+// Helper function to make admin requests
+func makeAdminRequest(method, url string, body interface{}) (*httptest.ResponseRecorder, error) {
+	var reqBody io.Reader
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		reqBody = bytes.NewBuffer(jsonData)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Admin-Token", "test-admin-token")
+
+	w := httptest.NewRecorder()
+	testRouter.ServeHTTP(w, req)
+	return w, nil
+}
+
 // Helper function to extract user ID from user object
 func getIDFromUser(user interface{}) int {
 	userMap, ok := user.(map[string]interface{})
@@ -90,7 +117,7 @@ func getIDFromUser(user interface{}) int {
 
 // Test 1: Health Check
 func TestHealthCheck(t *testing.T) {
-	w, err := makeRequest("GET", "/", nil, "")
+	w, err := makeRequest("GET", "/api/v1/", nil, "")
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
@@ -475,6 +502,54 @@ func TestRegisterDuplicateEmail(t *testing.T) {
 	}
 
 	fmt.Println("✓ Register duplicate email test passed")
+}
+
+// Test 16: Enforce one widget per tenant
+func TestCreateWidgetDuplicateTenant(t *testing.T) {
+	tenantName := fmt.Sprintf("Test Tenant %s", uuid.NewString())
+	createTenant := map[string]interface{}{
+		"name": tenantName,
+	}
+
+	tenantRes, err := makeAdminRequest("POST", "/api/v1/admin/tenants", createTenant)
+	if err != nil {
+		t.Fatalf("Failed to create tenant: %v", err)
+	}
+	if tenantRes.Code != http.StatusCreated {
+		t.Fatalf("Expected status 201, got %d. Body: %s", tenantRes.Code, tenantRes.Body.String())
+	}
+
+	var tenant map[string]interface{}
+	if err := json.Unmarshal(tenantRes.Body.Bytes(), &tenant); err != nil {
+		t.Fatalf("Failed to parse tenant response: %v", err)
+	}
+	tenantID, ok := tenant["id"].(string)
+	if !ok || tenantID == "" {
+		t.Fatalf("Expected tenant id in response, got %v", tenant["id"])
+	}
+
+	createWidget := map[string]interface{}{
+		"tenant_id":      tenantID,
+		"name":           "Primary Widget",
+		"allowed_origin": "http://localhost:3000",
+		"config":         "{}",
+	}
+
+	firstRes, err := makeAdminRequest("POST", "/api/v1/admin/widgets", createWidget)
+	if err != nil {
+		t.Fatalf("Failed to create widget: %v", err)
+	}
+	if firstRes.Code != http.StatusCreated {
+		t.Fatalf("Expected status 201, got %d. Body: %s", firstRes.Code, firstRes.Body.String())
+	}
+
+	secondRes, err := makeAdminRequest("POST", "/api/v1/admin/widgets", createWidget)
+	if err != nil {
+		t.Fatalf("Failed to create duplicate widget: %v", err)
+	}
+	if secondRes.Code != http.StatusConflict {
+		t.Fatalf("Expected status 409, got %d. Body: %s", secondRes.Code, secondRes.Body.String())
+	}
 }
 
 // Test 15: Register with Invalid Role

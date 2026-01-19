@@ -197,7 +197,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const loadWidget = async () => {
     if (!widgetId) return
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}`)
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`)
       const data = (await res.json()) as Widget
       setWidget(data)
       setWidgetName(data.name || "")
@@ -226,7 +226,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const loadTokens = async () => {
     if (!widgetId) return
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`)
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens`)
       const data = (await res.json()) as TokenSummary[]
       setTokens(data)
     } catch (err) {
@@ -242,7 +242,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       const from = new Date()
       from.setDate(to.getDate() - Number(days))
       const res = await apiFetch(
-        `/api/dashboard/widgets/${widgetId}/analytics?from=${from.toISOString()}&to=${to.toISOString()}`
+        `/api/v1/dashboard/widgets/${widgetId}/analytics?from=${from.toISOString()}&to=${to.toISOString()}`
       )
       const data = (await res.json()) as Analytics
       setAnalytics(data)
@@ -257,7 +257,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     if (!widgetId) return
     try {
       const res = await apiFetch(
-        `/api/dashboard/widgets/${widgetId}/conversations?limit=10`
+        `/api/v1/dashboard/widgets/${widgetId}/conversations?limit=10`
       )
       const data = (await res.json()) as ConversationSummary[]
       setConversations(data)
@@ -269,7 +269,9 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const loadConversationMessages = async (conversationId: string) => {
     setConversationLoading(true)
     try {
-      const res = await apiFetch(`/api/dashboard/conversations/${conversationId}/messages`)
+      const res = await apiFetch(
+        `/api/v1/dashboard/conversations/${conversationId}/messages`
+      )
       const data = (await res.json()) as ConversationMessage[]
       setConversationMessages(data)
     } catch (err) {
@@ -320,7 +322,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     }
 
     try {
-      await apiFetch(`/api/dashboard/widgets/${widgetId}`, {
+      await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`, {
         method: "PATCH",
         body: JSON.stringify({
           name: widgetName,
@@ -343,7 +345,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     setTokenError(null)
     setCreatedToken(null)
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens`, {
+      const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens`, {
         method: "POST",
         body: JSON.stringify({ name: tokenName }),
       })
@@ -364,7 +366,9 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     setTokenError(null)
     setCreatedToken(null)
     try {
-      const res = await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/rotate`, {
+      const res = await apiFetch(
+        `/api/v1/dashboard/widgets/${widgetId}/tokens/rotate`,
+        {
         method: "POST",
         body: JSON.stringify({ name: tokenName }),
       })
@@ -384,7 +388,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     setTokenBusy(true)
     setTokenError(null)
     try {
-      await apiFetch(`/api/dashboard/widgets/${widgetId}/tokens/${tokenId}`, {
+      await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens/${tokenId}`, {
         method: "DELETE",
       })
       await loadTokens()

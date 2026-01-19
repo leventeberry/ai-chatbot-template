@@ -65,7 +65,7 @@ type WidgetTokenSummary struct {
 // @Success      201      {object}  models.Tenant
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
-// @Router       /api/admin/tenants [post]
+// @Router       /api/v1/admin/tenants [post]
 func CreateTenant(tenantRepo repositories.TenantRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input CreateTenantRequest
@@ -94,7 +94,7 @@ func CreateTenant(tenantRepo repositories.TenantRepository) gin.HandlerFunc {
 // @Success      201      {object}  models.Widget
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
-// @Router       /api/admin/widgets [post]
+// @Router       /api/v1/admin/widgets [post]
 func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input CreateWidgetRequest
@@ -138,7 +138,7 @@ func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
 // @Failure      404      {object}  map[string]string
-// @Router       /api/admin/widgets/{id} [get]
+// @Router       /api/v1/admin/widgets/{id} [get]
 func GetWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		widgetID := c.Param("id")
@@ -181,7 +181,7 @@ func GetWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
 // @Failure      404      {object}  map[string]string
-// @Router       /api/admin/widgets/{id} [patch]
+// @Router       /api/v1/admin/widgets/{id} [patch]
 func UpdateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		widgetID := c.Param("id")
@@ -237,7 +237,7 @@ func UpdateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
 // @Failure      404      {object}  map[string]string
-// @Router       /api/admin/widgets/{id}/tokens [post]
+// @Router       /api/v1/admin/widgets/{id}/tokens [post]
 func CreateWidgetToken(
 	widgetRepo repositories.WidgetRepository,
 	apiKeyRepo repositories.ApiKeyRepository,
@@ -293,7 +293,7 @@ func CreateWidgetToken(
 // @Success      200  {array}   WidgetTokenSummary
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
-// @Router       /api/admin/widgets/{id}/tokens [get]
+// @Router       /api/v1/admin/widgets/{id}/tokens [get]
 func ListWidgetTokens(apiKeyRepo repositories.ApiKeyRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		widgetID := c.Param("id")
@@ -339,7 +339,7 @@ func ListWidgetTokens(apiKeyRepo repositories.ApiKeyRepository) gin.HandlerFunc 
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
-// @Router       /api/admin/widgets/{id}/tokens/{tokenId} [delete]
+// @Router       /api/v1/admin/widgets/{id}/tokens/{tokenId} [delete]
 func RevokeWidgetToken(apiKeyRepo repositories.ApiKeyRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		widgetID := c.Param("id")
@@ -384,7 +384,7 @@ func RevokeWidgetToken(apiKeyRepo repositories.ApiKeyRepository) gin.HandlerFunc
 // @Failure      400      {object}  map[string]string
 // @Failure      401      {object}  map[string]string
 // @Failure      404      {object}  map[string]string
-// @Router       /api/admin/widgets/{id}/tokens/rotate [post]
+// @Router       /api/v1/admin/widgets/{id}/tokens/rotate [post]
 func RotateWidgetTokens(
 	widgetRepo repositories.WidgetRepository,
 	apiKeyRepo repositories.ApiKeyRepository,
