@@ -67,3 +67,4 @@ go.work
 go.work.sum
 
 /.npm-cache/
+/server/tmp/
