@@ -3,6 +3,14 @@
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type DashboardSection =
   | "overview"
@@ -407,7 +415,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
 
   const appendCurrentOrigin = () => {
     if (!currentOrigin) return
-  setAllowedOrigin(currentOrigin)
+    setAllowedOrigin(currentOrigin)
   }
 
   return (
@@ -437,23 +445,37 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
           {section === "overview" && (
             <section className="grid gap-4 md:grid-cols-3">
               <OverviewCard
-                label="Tokens"
-                value={tokens.length.toString()}
-                detail={
-                  tokens.length
-                    ? `Last used: ${formatDate(tokens[0]?.last_used_at)}`
-                    : "No token usage yet"
-                }
-              />
-              <OverviewCard
-                label="Recent Chat"
-                value={analytics?.last_chat_at ? formatDate(analytics.last_chat_at) : "—"}
-                detail="Latest message timestamp"
-              />
-              <OverviewCard
                 label="Sessions (30d)"
-                value={analytics?.sessions.total?.toString() || "0"}
-                detail={`Today: ${analytics?.sessions.today ?? 0}`}
+                value={analytics?.sessions.total?.toString() ?? "—"}
+                detail={
+                  analytics
+                    ? `Today: ${analytics.sessions.today}`
+                    : "No session data yet"
+                }
+                isLoading={analyticsLoading}
+                isEmpty={!analytics}
+              />
+              <OverviewCard
+                label="Messages (30d)"
+                value={analytics?.messages.total?.toString() ?? "—"}
+                detail={
+                  analytics
+                    ? `User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`
+                    : "No message data yet"
+                }
+                isLoading={analyticsLoading}
+                isEmpty={!analytics}
+              />
+              <OverviewCard
+                label="Last chat"
+                value={analytics?.last_chat_at ? formatDate(analytics.last_chat_at) : "—"}
+                detail={
+                  analytics?.last_chat_at
+                    ? "Latest message timestamp"
+                    : "No chats yet"
+                }
+                isLoading={analyticsLoading}
+                isEmpty={!analytics?.last_chat_at}
               />
             </section>
           )}
@@ -889,17 +911,37 @@ function OverviewCard({
   label,
   value,
   detail,
+  isLoading,
+  isEmpty,
 }: {
   label: string
   value: string
   detail: string
+  isLoading?: boolean
+  isEmpty?: boolean
 }) {
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="text-xs text-muted-foreground">{detail}</p>
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardDescription className="text-xs uppercase tracking-wide">
+          {label}
+        </CardDescription>
+        {isLoading ? (
+          <Skeleton className="h-8 w-24" />
+        ) : (
+          <CardTitle className="text-2xl">{value}</CardTitle>
+        )}
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-4 w-32" />
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {isEmpty ? "No data yet" : detail}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
