@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -646,7 +647,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
           )}
 
           {section === "settings" && (
-            <section className="rounded-2xl border border-border bg-card p-6 space-y-6">
+            <section className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold">Widget Settings</h2>
                 <p className="text-sm text-muted-foreground">
@@ -654,127 +655,91 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                 </p>
               </div>
               <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  <Field label="Name">
-                    <input
-                      value={widgetName}
-                      onChange={(event) => setWidgetName(event.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="Your widget name"
-                    />
-                  </Field>
-                  <Field label="Allowed Origin">
-                    <textarea
-                      rows={2}
-                      value={allowedOrigin}
-                      onChange={(event) =>
-                        setAllowedOrigin(normalizeAllowedOrigin(event.target.value))
-                      }
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="https://example.com"
-                    />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                      <span>Current origin: {currentOrigin || "unknown"}</span>
-                      <button
-                        type="button"
-                        onClick={appendCurrentOrigin}
-                        className="text-primary hover:text-primary/80"
-                      >
-                        Use current domain
-                      </button>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Behavior</CardTitle>
+                    <CardDescription>Greeting and assistant behavior.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Widget name</label>
+                      <Input
+                        value={widgetName}
+                        onChange={(event) => setWidgetName(event.target.value)}
+                        placeholder="Your widget name"
+                      />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      One website per account. Set the exact domain where the widget will be embedded.
-                    </p>
-                  </Field>
-                  <Field label="Greeting Message">
-                    <input
-                      value={welcomeMessage}
-                      onChange={(event) => setWelcomeMessage(event.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    />
-                  </Field>
-                  <Field label="Initial Prompt (optional)">
-                    <input
-                      value={initialPrompt}
-                      onChange={(event) => setInitialPrompt(event.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    />
-                  </Field>
-                  <Field label="Behavior">
-                    <div className="space-y-3 text-sm">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Greeting message</label>
+                      <Input
+                        value={welcomeMessage}
+                        onChange={(event) => setWelcomeMessage(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Initial prompt (optional)</label>
+                      <Input
+                        value={initialPrompt}
+                        onChange={(event) => setInitialPrompt(event.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
                           checked={openOnLoad}
-                          onChange={(event) => setOpenOnLoad(event.target.checked)}
+                          onCheckedChange={(value) => setOpenOnLoad(Boolean(value))}
                         />
-                        Open on load
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <span className="text-sm">Open on load</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
                           checked={showOnline}
-                          onChange={(event) => setShowOnline(event.target.checked)}
+                          onCheckedChange={(value) => setShowOnline(Boolean(value))}
                         />
-                        Show online indicator
-                      </label>
+                        <span className="text-sm">Show online indicator</span>
+                      </div>
                     </div>
-                  </Field>
-                  <Field label="System prompt">
-                    <textarea
-                      rows={4}
-                      value={systemPrompt}
-                      onChange={(event) => setSystemPrompt(event.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="Answer only questions about our product. Be concise and friendly."
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Used as a guard rail for the assistant. Leave empty to disable.
-                    </p>
-                  </Field>
-                  <Field label="Documentation / FAQ">
-                    <textarea
-                      rows={6}
-                      value={documentation}
-                      onChange={(event) => setDocumentation(event.target.value)}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                      placeholder="Paste product FAQs or documentation here."
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      This content is attached to the system prompt for grounding.
-                    </p>
-                  </Field>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div className="space-y-4">
-                  <Field label="Theme">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Theme</CardTitle>
+                    <CardDescription>Update widget colors and branding.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <ColorField label="Header" value={headerBackground} onChange={setHeaderBackground} />
                       <ColorField label="Header Text" value={headerText} onChange={setHeaderText} />
                       <ColorField label="Button" value={buttonBackground} onChange={setButtonBackground} />
                       <ColorField label="Button Text" value={buttonText} onChange={setButtonText} />
                     </div>
-                  </Field>
-                  <Field label="Branding">
-                    <div className="space-y-3 text-sm">
-                      <input
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Logo URL</label>
+                      <Input
                         value={logoUrl}
                         onChange={(event) => setLogoUrl(event.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                        placeholder="Logo URL"
+                        placeholder="https://example.com/logo.png"
                       />
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
+                      <div className="flex items-center gap-2">
+                        <Checkbox
                           checked={showLogo}
-                          onChange={(event) => setShowLogo(event.target.checked)}
+                          onCheckedChange={(value) => setShowLogo(Boolean(value))}
                         />
-                        Show logo in header
-                      </label>
+                        <span className="text-sm">Show logo in header</span>
+                      </div>
                     </div>
-                  </Field>
-                  <Field label="Placement">
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Placement</CardTitle>
+                    <CardDescription>Position the widget on the page.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <select
                         value={position}
@@ -787,34 +752,72 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                         <option value="bottom-left">Bottom left</option>
                       </select>
                       <div className="flex gap-2">
-                        <input
+                        <Input
                           type="number"
                           value={offsetX}
                           onChange={(event) => setOffsetX(Number(event.target.value))}
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                           placeholder="Offset X"
                         />
-                        <input
+                        <Input
                           type="number"
                           value={offsetY}
                           onChange={(event) => setOffsetY(Number(event.target.value))}
-                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                           placeholder="Offset Y"
                         />
                       </div>
                     </div>
-                  </Field>
-                </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Allowed domains</CardTitle>
+                    <CardDescription>
+                      Set the exact domain where the widget can be embedded.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Input
+                      value={allowedOrigin}
+                      onChange={(event) =>
+                        setAllowedOrigin(normalizeAllowedOrigin(event.target.value))
+                      }
+                      placeholder="https://example.com"
+                    />
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>Current origin: {currentOrigin || "unknown"}</span>
+                      <Button size="sm" variant="ghost" onClick={appendCurrentOrigin}>
+                        Use current domain
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Embed snippet</CardTitle>
+                  <CardDescription>Use this in your Next.js app.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
+{`import { ChatWidget } from "@/components/ChatWidget";
+
+// Set NEXT_PUBLIC_WIDGET_TOKEN to your widget token
+export default function App() {
+  return <ChatWidget />;
+}`}
+                  </pre>
+                  <p className="text-xs text-muted-foreground">
+                    Required header: <code>Authorization: Bearer &lt;token&gt;</code>
+                  </p>
+                </CardContent>
+              </Card>
+
               <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                >
+                <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save settings"}
-                </button>
+                </Button>
                 {saveMessage && <span className="text-sm text-emerald-600">{saveMessage}</span>}
                 <span className="text-xs text-muted-foreground">
                   Saving the allowed origin enforces widget CORS checks.
