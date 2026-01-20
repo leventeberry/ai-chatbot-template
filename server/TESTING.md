@@ -314,3 +314,26 @@ Example CI/CD test command:
     go tool cover -html=coverage.out -o coverage.html
 ```
 
+## Stripe Billing Test Checklist
+
+### Prerequisites
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` configured in server environment
+- [ ] `STRIPE_LICENSE_PRICE_ID`, `STRIPE_USAGE_PRICE_ID`, `STRIPE_METER_EVENT_NAME` configured
+- [ ] Stripe CLI installed and logged in (`stripe login`)
+- [ ] Webhook forwarding started: `stripe listen --forward-to localhost:8080/api/v1/stripe/webhook`
+
+### Checkout Session (Custom UI)
+- [ ] Call `POST /api/v1/dashboard/billing/customer` and verify a Stripe customer is created
+- [ ] Call `POST /api/v1/dashboard/billing/checkout-session` with `return_url`
+- [ ] Verify `client_secret` is returned and embedded checkout renders on frontend
+
+### Usage Reporting
+- [ ] Call `POST /api/v1/dashboard/billing/usage-events` with an `event_id` and tokens
+- [ ] Verify meter event appears in Stripe Dashboard or via CLI (`stripe billing meter-events list`)
+- [ ] Re-send the same `event_id` and confirm no duplicate events (idempotency)
+
+### Webhook Handling
+- [ ] Complete checkout in test mode and confirm `checkout.session.completed` updates tenant subscription
+- [ ] Trigger `invoice.payment_failed` (use a test clock or failing test card) and verify subscription status updates
+- [ ] Trigger `customer.subscription.deleted` and confirm tenant status reflects cancellation
+

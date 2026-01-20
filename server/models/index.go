@@ -26,6 +26,9 @@ type Tenant struct {
 	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
 	Name      string    `gorm:"not null" json:"name"`
 	Status    string    `gorm:"not null;default:active" json:"status"`
+	StripeCustomerID      string    `gorm:"uniqueIndex" json:"stripe_customer_id"`
+	StripeSubscriptionID  string    `gorm:"index" json:"stripe_subscription_id"`
+	StripeSubscriptionStatus string `json:"stripe_subscription_status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

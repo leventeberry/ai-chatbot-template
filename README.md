@@ -94,6 +94,42 @@ Widget auth (Phase 1):
 Admin provisioning (Phase 5):
 - Set `ADMIN_TOKEN` and pass it in `X-Admin-Token` for `/api/admin/*`.
 
+## Stripe development setup
+
+Install the Stripe CLI (WSL2 apt):
+
+```bash
+curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg
+echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee -a /etc/apt/sources.list.d/stripe.list
+sudo apt update
+sudo apt install stripe
+```
+
+Authenticate the CLI:
+
+```bash
+stripe login
+```
+
+Sanity check the CLI (demo product + price):
+
+```bash
+make stripe-check
+```
+
+Stripe keys are required for local testing. Copy `env.example` to `.env` and set:
+
+- `STRIPE_SECRET_KEY` (server-side, test secret key)
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (client-side, test publishable key)
+
+Do not commit secrets to git.
+
+If apt install is blocked, you can run the CLI via Docker:
+
+```bash
+docker run --rm -it stripe/stripe-cli:latest
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

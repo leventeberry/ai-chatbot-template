@@ -64,6 +64,10 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 	// Backwards-compatible health endpoint
 	v1.GET("/health", healthCheckHandler(c))
 
+	if c.TenantRepository != nil {
+		v1.POST("/stripe/webhook", controllers.HandleStripeWebhook(c.TenantRepository))
+	}
+
 	// Widget chat endpoints
 	SetupChatRoutes(v1, c)
 
@@ -119,6 +123,15 @@ func SetupRoutes(router *gin.Engine, c *container.Container) {
 		dashboard := v1.Group("/dashboard")
 		dashboard.Use(middleware.AuthMiddleware())
 		{
+			if c.TenantRepository != nil {
+				billing := dashboard.Group("/billing")
+				{
+					billing.POST("/customer", controllers.CreateStripeCustomer(c.TenantRepository))
+					billing.POST("/checkout-session", controllers.CreateCheckoutSession(c.TenantRepository))
+					billing.POST("/usage-events", controllers.ReportUsageEvent(c.TenantRepository))
+				}
+			}
+
 			widgetGroup := dashboard.Group("/widgets/:id")
 			widgetGroup.Use(middleware.RequireWidgetMatch("id"))
 			{

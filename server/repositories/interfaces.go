@@ -51,7 +51,9 @@ type WidgetRepository interface {
 // TenantRepository defines the interface for tenant operations
 type TenantRepository interface {
 	FindByID(id string) (*models.Tenant, error)
+	FindByStripeCustomerID(customerID string) (*models.Tenant, error)
 	Create(tenant *models.Tenant) error
+	Update(tenant *models.Tenant) error
 }
 
 // ApiKeyRepository defines the interface for widget API keys

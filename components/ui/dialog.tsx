@@ -1,6 +1,7 @@
 'use client';
 import { AnimatePresence, motion, Transition, Variants } from 'motion/react';
 import React, { createContext, useContext, useEffect, useRef } from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
 import { useId } from 'react';
 import { createPortal } from 'react-dom';
@@ -140,27 +141,41 @@ function Dialog({
   );
 }
 
-export type DialogTriggerProps = {
-  children: React.ReactNode;
-  className?: string;
+export type DialogTriggerProps = React.ComponentPropsWithoutRef<'button'> & {
+  asChild?: boolean;
 };
 
-function DialogTrigger({ children, className }: DialogTriggerProps) {
+function DialogTrigger({
+  children,
+  className,
+  asChild = false,
+  onClick,
+  type,
+  ...props
+}: DialogTriggerProps) {
   const context = useContext(DialogContext);
   if (!context) throw new Error('DialogTrigger must be used within Dialog');
+  const Component = asChild ? Slot : 'button';
 
   return (
-    <button
-      onClick={context.handleTrigger}
+    <Component
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) {
+          context.handleTrigger();
+        }
+      }}
       className={cn(
         'inline-flex items-center justify-center rounded-md text-sm font-medium',
         'transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
         'focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
         className
       )}
+      {...(!asChild ? { type: type ?? 'button' } : {})}
+      {...props}
     >
       {children}
-    </button>
+    </Component>
   );
 }
 

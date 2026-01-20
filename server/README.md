@@ -169,6 +169,18 @@ goapi/
    swag init
    ```
 
+## Stripe Usage-Based Billing
+
+Backend billing endpoints expect Stripe resources to be configured ahead of time:
+
+- Create a Stripe meter with event name `tokens_used`
+- Create a recurring licensed fee price (fixed monthly)
+- Create a recurring metered usage price (tiered overages, tied to the meter)
+- Store IDs in `STRIPE_LICENSE_PRICE_ID`, `STRIPE_USAGE_PRICE_ID`, `STRIPE_METER_EVENT_NAME`
+- Use Stripe Dashboard or CLI to create these resources
+
+Once configured, the API will create a subscription Checkout Session and post meter events for usage reporting.
+
 ## Docker Makefile Commands (repo root)
 
 Docker helper commands live in the repo root `Makefile`:

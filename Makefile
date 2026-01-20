@@ -4,7 +4,8 @@ SHELL := /bin/sh
 	docker-dev docker-dev-build docker-up docker-down docker-down-volumes docker-logs \
 	docker-logs-api docker-logs-db docker-logs-redis docker-logs-redis-commander docker-logs-pgadmin \
 	docker-restart docker-rebuild docker-ps docker-shell-api docker-shell-db docker-shell-redis \
-	docker-open-redis-commander docker-open-pgadmin dev dev-docker setup prod-build all docker-all
+	docker-open-redis-commander docker-open-pgadmin dev dev-docker setup prod-build all docker-all \
+	stripe-version stripe-check
 
 # Variables
 APP_NAME=goapi
@@ -162,3 +163,12 @@ all: clean install swagger build ## Clean, install, generate docs, and build
 
 docker-all: docker-down docker-up ## Full Docker rebuild: down, build, up
 	@echo "$(GREEN)Docker stack ready!$(NC)"
+
+# Stripe CLI helpers
+stripe-version: ## Show Stripe CLI version
+	@stripe --version
+
+stripe-check: ## Create demo Stripe product and price
+	@echo "$(GREEN)Creating demo Stripe product and price...$(NC)"
+	@PRODUCT_ID=$$(stripe products create --name="Demo Product" --description="Created with Stripe CLI" | python -c 'import json,sys;print(json.load(sys.stdin)["id"])'); \
+	stripe prices create --unit-amount=3000 --currency=usd --product=$$PRODUCT_ID

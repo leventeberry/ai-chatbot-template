@@ -39,3 +39,22 @@ func (r *tenantRepository) Create(tenant *models.Tenant) error {
 	}
 	return nil
 }
+
+func (r *tenantRepository) Update(tenant *models.Tenant) error {
+	if err := r.db.Save(tenant).Error; err != nil {
+		return fmt.Errorf("failed to update tenant: %w", err)
+	}
+	return nil
+}
+
+func (r *tenantRepository) FindByStripeCustomerID(customerID string) (*models.Tenant, error) {
+	var tenant models.Tenant
+	err := r.db.First(&tenant, "stripe_customer_id = ?", customerID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTenantNotFound
+		}
+		return nil, fmt.Errorf("failed to find tenant by stripe customer ID %s: %w", customerID, err)
+	}
+	return &tenant, nil
+}
