@@ -28,17 +28,6 @@ export default function SupportPage() {
           </CardHeader>
           <CardContent>
             <form className="space-y-6" aria-label="Contact support form">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-foreground">
-                  Name
-                  <Input name="name" type="text" placeholder="Jane Doe" />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-foreground">
-                  Email
-                  <Input name="email" type="email" placeholder="you@example.com" />
-                </label>
-              </div>
-
               <label className="space-y-2 text-sm font-medium text-foreground">
                 Subject
                 <Input name="subject" type="text" placeholder="Billing question" />
