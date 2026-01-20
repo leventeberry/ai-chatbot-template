@@ -10,6 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type DashboardSection =
@@ -143,6 +152,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     ConversationMessage[]
   >([])
   const [conversationLoading, setConversationLoading] = useState(false)
+  const [conversationsLoading, setConversationsLoading] = useState(false)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -162,7 +172,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const needsWidget = section === "settings"
   const needsTokens = section === "tokens" || section === "overview"
   const needsAnalytics = section === "analytics" || section === "overview"
-  const needsConversations = section === "conversations"
+  const needsConversations = section === "conversations" || section === "overview"
 
   useEffect(() => {
     if (!authToken || !widgetId) return
@@ -263,6 +273,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
 
   const loadConversations = async () => {
     if (!widgetId) return
+    setConversationsLoading(true)
     try {
       const res = await apiFetch(
         `/api/v1/dashboard/widgets/${widgetId}/conversations?limit=10`
@@ -271,6 +282,8 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       setConversations(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load conversations")
+    } finally {
+      setConversationsLoading(false)
     }
   }
 
@@ -443,40 +456,145 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       {isReady ? (
         <>
           {section === "overview" && (
-            <section className="grid gap-4 md:grid-cols-3">
-              <OverviewCard
-                label="Sessions (30d)"
-                value={analytics?.sessions.total?.toString() ?? "—"}
-                detail={
-                  analytics
-                    ? `Today: ${analytics.sessions.today}`
-                    : "No session data yet"
-                }
-                isLoading={analyticsLoading}
-                isEmpty={!analytics}
-              />
-              <OverviewCard
-                label="Messages (30d)"
-                value={analytics?.messages.total?.toString() ?? "—"}
-                detail={
-                  analytics
-                    ? `User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`
-                    : "No message data yet"
-                }
-                isLoading={analyticsLoading}
-                isEmpty={!analytics}
-              />
-              <OverviewCard
-                label="Last chat"
-                value={analytics?.last_chat_at ? formatDate(analytics.last_chat_at) : "—"}
-                detail={
-                  analytics?.last_chat_at
-                    ? "Latest message timestamp"
-                    : "No chats yet"
-                }
-                isLoading={analyticsLoading}
-                isEmpty={!analytics?.last_chat_at}
-              />
+            <section className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold">Overview</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Snapshot of recent widget activity.
+                  </p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {timeRangeLabel(timeRange)}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuRadioGroup
+                      value={timeRange}
+                      onValueChange={(value) => setTimeRange(value as "7" | "30" | "90")}
+                    >
+                      <DropdownMenuRadioItem value="7">Last 7 days</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="30">
+                        Last 30 days
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="90">
+                        Last 90 days
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <OverviewCard
+                  label={`Sessions (${timeRange}d)`}
+                  value={analytics?.sessions.total?.toString() ?? "—"}
+                  detail={
+                    analytics
+                      ? `Today: ${analytics.sessions.today}`
+                      : "No session data yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics}
+                />
+                <OverviewCard
+                  label={`Messages (${timeRange}d)`}
+                  value={analytics?.messages.total?.toString() ?? "—"}
+                  detail={
+                    analytics
+                      ? `User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`
+                      : "No message data yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics}
+                />
+                <OverviewCard
+                  label="Last chat"
+                  value={analytics?.last_chat_at ? formatDate(analytics.last_chat_at) : "—"}
+                  detail={
+                    analytics?.last_chat_at
+                      ? "Latest message timestamp"
+                      : "No chats yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics?.last_chat_at}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Recent activity</CardTitle>
+                    <CardDescription>Latest conversations for this widget.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {conversationsLoading && (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    )}
+                    {!conversationsLoading && conversations.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No activity yet.</p>
+                    )}
+                    {!conversationsLoading &&
+                      conversations.slice(0, 5).map((conversation, index) => (
+                        <div key={conversation.id} className="space-y-2">
+                          <div className="space-y-1 text-sm">
+                            <p className="font-medium">
+                              Session {conversation.session_id}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {conversation.origin || "Unknown origin"} •{" "}
+                              {conversation.message_count} messages •{" "}
+                              {formatDate(conversation.created_at)}
+                            </p>
+                          </div>
+                          {index < Math.min(conversations.length, 5) - 1 && (
+                            <Separator />
+                          )}
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Top sources</CardTitle>
+                    <CardDescription>Domains driving conversations.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {analyticsLoading && (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    )}
+                    {!analyticsLoading && !analytics?.per_domain.length && (
+                      <p className="text-sm text-muted-foreground">
+                        No domain data yet.
+                      </p>
+                    )}
+                    {!analyticsLoading &&
+                      analytics?.per_domain
+                        .slice(0, 5)
+                        .map((row, index, items) => (
+                          <div key={row.origin || "unknown"} className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">
+                                {row.origin || "Unknown origin"}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {row.sessions} sessions • {row.messages} messages
+                              </span>
+                            </div>
+                            {index < items.length - 1 && <Separator />}
+                          </div>
+                        ))}
+                  </CardContent>
+                </Card>
+              </div>
             </section>
           )}
 
@@ -905,6 +1023,12 @@ function formatDate(value?: string | null) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "—"
   return date.toLocaleString()
+}
+
+function timeRangeLabel(value: "7" | "30" | "90") {
+  if (value === "7") return "Last 7 days"
+  if (value === "90") return "Last 90 days"
+  return "Last 30 days"
 }
 
 function OverviewCard({
