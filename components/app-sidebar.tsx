@@ -19,6 +19,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
 
@@ -118,15 +121,21 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-2 py-1.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 text-sm font-bold text-primary-foreground">
-            AI
-          </div>
-          <div className="grid leading-tight">
-            <span className="text-sm font-semibold">ChatTemplate</span>
-            <span className="text-xs text-muted-foreground">{userTier}</span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild className="pointer-events-none">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 text-sm font-bold text-primary-foreground">
+                  AI
+                </div>
+                <div className="grid leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="text-sm font-semibold">ChatTemplate</span>
+                  <span className="text-xs text-muted-foreground">{userTier}</span>
+                </div>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />

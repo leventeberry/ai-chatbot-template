@@ -21,6 +21,7 @@
   "registries": {
     "@better-upload": "https://better-upload.com/r/{name}.json",
     "@icons-animated": "https://icons.lndev.me/r/{name}.json",
-    "@beste-ui": "https://ui.beste.co/r/registry.json"
+    "@beste-ui": "https://ui.beste.co/r/registry.json",
+    "@jolyui": "https://www.jolyui.dev/r/{name}.json"
   }
 }
