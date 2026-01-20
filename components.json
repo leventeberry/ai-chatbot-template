@@ -18,5 +18,9 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@better-upload": "https://better-upload.com/r/{name}.json",
+    "@icons-animated": "https://icons.lndev.me/r/{name}.json",
+    "@beste-ui": "https://ui.beste.co/r/registry.json"
+  }
 }
