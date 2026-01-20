@@ -18,6 +18,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -140,6 +148,8 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const [createdToken, setCreatedToken] = useState<string | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
   const [tokenBusy, setTokenBusy] = useState(false)
+  const [tokenCopied, setTokenCopied] = useState(false)
+  const [tokenToRevoke, setTokenToRevoke] = useState<TokenSummary | null>(null)
 
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [timeRange, setTimeRange] = useState<"7" | "30" | "90">("30")
@@ -174,7 +184,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     setIsReady(true)
   }, [router])
 
-  const needsWidget = section === "settings"
+  const needsWidget = section === "settings" || section === "tokens"
   const needsTokens = section === "tokens" || section === "overview"
   const needsAnalytics = section === "analytics" || section === "overview"
   const needsConversations = section === "conversations" || section === "overview"
@@ -422,6 +432,38 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
       setTokenError(err instanceof Error ? err.message : "Failed to revoke token")
     } finally {
       setTokenBusy(false)
+    }
+  }
+
+  const handleCopyToken = async () => {
+    if (!createdToken) return
+    try {
+      await navigator.clipboard.writeText(createdToken)
+      setTokenCopied(true)
+      window.setTimeout(() => setTokenCopied(false), 1500)
+    } catch {
+      setTokenCopied(false)
+    }
+  }
+
+  const handleSaveAllowedOrigin = async () => {
+    if (!widgetId) return
+    setIsSaving(true)
+    setSaveMessage(null)
+    setError(null)
+    try {
+      await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          allowed_origin: normalizeAllowedOrigin(allowedOrigin) || currentOrigin,
+        }),
+      })
+      setSaveMessage("Allowed domains saved.")
+      await loadWidget()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save domains")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -782,7 +824,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
           )}
 
           {section === "tokens" && (
-            <section className="rounded-2xl border border-border bg-card p-6 space-y-6">
+            <section className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold">Embed & Tokens</h2>
                 <p className="text-sm text-muted-foreground">
@@ -790,8 +832,12 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
                 </p>
               </div>
               <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  <Field label="Embed snippet">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Embed snippet</CardTitle>
+                    <CardDescription>Drop this into your Next.js app.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
                     <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
 {`import { ChatWidget } from "@/components/ChatWidget";
 
@@ -803,57 +849,97 @@ export default function App() {
                     <p className="text-xs text-muted-foreground">
                       Required header: <code>Authorization: Bearer &lt;token&gt;</code>
                     </p>
-                  </Field>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p>Safety tips:</p>
-                    <p>• Tokens are secrets. Do not expose them in public repos.</p>
-                    <p>• Rotate tokens immediately if leaked.</p>
-                  </div>
-                </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Safety tips:</p>
+                      <p>• Tokens are secrets. Do not expose them in public repos.</p>
+                      <p>• Rotate tokens immediately if leaked.</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <div className="space-y-4">
-                  <Field label="Create / Rotate Token">
-                    <div className="flex gap-2">
-                      <input
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Create / Rotate token</CardTitle>
+                    <CardDescription>Generate new widget access tokens.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Input
                         value={tokenName}
                         onChange={(event) => setTokenName(event.target.value)}
-                        className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
                         placeholder="Token name"
                       />
-                      <button
-                        onClick={handleCreateToken}
-                        disabled={tokenBusy}
-                        className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
-                      >
-                        Create
-                      </button>
-                      <button
-                        onClick={handleRotateTokens}
-                        disabled={tokenBusy}
-                        className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
-                      >
-                        Rotate
-                      </button>
+                      <div className="flex gap-2">
+                        <Button onClick={handleCreateToken} disabled={tokenBusy}>
+                          Create
+                        </Button>
+                        <Button variant="outline" onClick={handleRotateTokens} disabled={tokenBusy}>
+                          Rotate
+                        </Button>
+                      </div>
                     </div>
                     {tokenError && (
                       <p className="text-xs text-destructive">{tokenError}</p>
                     )}
                     {createdToken && (
-                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700">
-                        New token (copy now): <strong>{createdToken}</strong>
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 space-y-2">
+                        <div>
+                          New token (copy now): <strong>{createdToken}</strong>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={handleCopyToken}>
+                          {tokenCopied ? "Copied" : "Copy token"}
+                        </Button>
                       </div>
                     )}
-                  </Field>
-                  <Field label="Active Tokens">
-                    <div className="space-y-2 text-sm">
-                      {tokens.length === 0 && (
-                        <p className="text-muted-foreground">No tokens yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Allowed domains</CardTitle>
+                    <CardDescription>
+                      Restrict where the widget can be embedded.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Input
+                      value={allowedOrigin}
+                      onChange={(event) =>
+                        setAllowedOrigin(normalizeAllowedOrigin(event.target.value))
+                      }
+                      placeholder="https://example.com"
+                    />
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>Current origin: {currentOrigin || "unknown"}</span>
+                      <Button size="sm" variant="ghost" onClick={appendCurrentOrigin}>
+                        Use current domain
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button onClick={handleSaveAllowedOrigin} disabled={isSaving}>
+                        {isSaving ? "Saving..." : "Save domains"}
+                      </Button>
+                      {saveMessage && (
+                        <span className="text-xs text-emerald-600">{saveMessage}</span>
                       )}
-                      {tokens.map((token) => (
-                        <div
-                          key={token.id}
-                          className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                        >
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Active tokens</CardTitle>
+                    <CardDescription>Manage tokens and revoke access.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {tokens.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No tokens yet.</p>
+                    )}
+                    {tokens.map((token, index) => (
+                      <div key={token.id} className="space-y-2 text-sm">
+                        <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="font-medium">{token.name}</p>
                             <p className="text-xs text-muted-foreground">
@@ -861,18 +947,48 @@ export default function App() {
                               {formatDate(token.last_used_at)}
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleRevokeToken(token.id)}
-                            className="text-xs text-destructive hover:text-destructive/80"
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setTokenToRevoke(token)}
                           >
                             Revoke
-                          </button>
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  </Field>
-                </div>
+                        {index < tokens.length - 1 && <Separator />}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               </div>
+
+              <Dialog open={Boolean(tokenToRevoke)} onOpenChange={() => setTokenToRevoke(null)}>
+                <DialogContent className="max-w-md bg-background">
+                  <DialogHeader>
+                    <DialogTitle>Revoke token</DialogTitle>
+                    <DialogDescription>
+                      This token will be disabled immediately. You can create a new token
+                      at any time.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-2 px-6 pb-6">
+                    <Button variant="ghost" onClick={() => setTokenToRevoke(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (tokenToRevoke) {
+                          void handleRevokeToken(tokenToRevoke.id)
+                          setTokenToRevoke(null)
+                        }
+                      }}
+                    >
+                      Revoke token
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </section>
           )}
 
