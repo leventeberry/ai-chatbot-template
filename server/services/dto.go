@@ -10,6 +10,7 @@ type CreateUserInput struct {
 	Password  string
 	PhoneNum  string
 	Role      string
+	Tier      string
 }
 
 // UpdateUserInput holds the data for updating a user
@@ -20,6 +21,7 @@ type UpdateUserInput struct {
 	Password  *string
 	PhoneNum  *string
 	Role      *string
+	Tier      *string
 }
 
 // RegisterInput holds the data for user registration
@@ -30,6 +32,7 @@ type RegisterInput struct {
 	Password  string
 	PhoneNum  string
 	Role      string
+	Tier      string
 }
 
 // PaginationParams holds pagination parameters

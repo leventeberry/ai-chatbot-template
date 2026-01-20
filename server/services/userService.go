@@ -45,6 +45,11 @@ func (s *userService) CreateUser(ctx context.Context, input *CreateUserInput) (*
 		role = "user"
 	}
 
+	tier := strings.TrimSpace(input.Tier)
+	if tier == "" {
+		tier = "Basic"
+	}
+
 	// Check if email already exists
 	exists, err := s.userRepo.ExistsByEmail(input.Email)
 	if err != nil {
@@ -70,6 +75,7 @@ func (s *userService) CreateUser(ctx context.Context, input *CreateUserInput) (*
 		PassHash:  hash,
 		PhoneNum:  input.PhoneNum,
 		Role:      role,
+		Tier:      tier,
 	}
 
 	// Save to database
@@ -204,7 +210,8 @@ func (s *userService) UpdateUser(ctx context.Context, id int, input *UpdateUserI
 
 	// Validate at least one field is being updated
 	if input.FirstName == nil && input.LastName == nil && input.Email == nil &&
-		input.Password == nil && input.PhoneNum == nil && input.Role == nil {
+		input.Password == nil && input.PhoneNum == nil && input.Role == nil &&
+		input.Tier == nil {
 		return nil, ErrNoFieldsToUpdate
 	}
 
@@ -242,6 +249,13 @@ func (s *userService) UpdateUser(ctx context.Context, id int, input *UpdateUserI
 			return nil, ErrInvalidRole
 		}
 		user.Role = *input.Role
+	}
+
+	if input.Tier != nil {
+		trimmed := strings.TrimSpace(*input.Tier)
+		if trimmed != "" {
+			user.Tier = trimmed
+		}
 	}
 
 	// Handle password update with hashing

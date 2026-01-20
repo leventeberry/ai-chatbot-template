@@ -1,6 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
+import Link from "next/link"
 import { Folder, Forward, MoreHorizontal, Trash2 } from "lucide-react"
 
 import {
@@ -36,10 +37,10 @@ export function NavProjects({ projects }: { projects: Project[] }) {
         {projects.map((project) => (
           <SidebarMenuItem key={project.name}>
             <SidebarMenuButton asChild>
-              <a href={project.url}>
+              <Link href={project.url}>
                 <project.icon />
                 <span>{project.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

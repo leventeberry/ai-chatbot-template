@@ -22,6 +22,7 @@ const titleMap: Record<string, string> = {
   "/dashboard/tokens": "Tokens",
   "/dashboard/analytics": "Analytics",
   "/dashboard/conversations": "Conversations",
+  "/dashboard/support": "Support",
 }
 
 export default function DashboardLayout({

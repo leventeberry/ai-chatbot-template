@@ -1,6 +1,7 @@
 "use client"
 
 import type { ComponentType } from "react"
+import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
 import {
@@ -54,10 +55,10 @@ export function NavMain({ items }: { items: NavItem[] }) {
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </>
                     ) : (
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         {item.icon && <item.icon className="size-4" />}
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     )}
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -67,9 +68,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
+                            <Link href={subItem.url}>
                               <span>{subItem.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}

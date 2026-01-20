@@ -22,6 +22,10 @@ type LoginResponse = {
     email: string;
     tenant_id: string;
     widget_id: string;
+    first_name?: string;
+    last_name?: string;
+    role?: string;
+    tier?: string;
   };
 };
 
@@ -30,6 +34,11 @@ type SignupResponse = LoginResponse;
 const AUTH_TOKEN_KEY = "auth_token";
 const AUTH_TENANT_KEY = "auth_tenant_id";
 const AUTH_WIDGET_KEY = "auth_widget_id";
+const AUTH_USER_EMAIL_KEY = "auth_user_email";
+const AUTH_USER_FIRST_NAME_KEY = "auth_user_first_name";
+const AUTH_USER_LAST_NAME_KEY = "auth_user_last_name";
+const AUTH_USER_ROLE_KEY = "auth_user_role";
+const AUTH_USER_TIER_KEY = "auth_user_tier";
 
 export function LoginDialog() {
   const router = useRouter();
@@ -99,6 +108,19 @@ export function LoginDialog() {
         if ("user" in data) {
           localStorage.setItem(AUTH_TENANT_KEY, data.user.tenant_id);
           localStorage.setItem(AUTH_WIDGET_KEY, data.user.widget_id);
+          localStorage.setItem(AUTH_USER_EMAIL_KEY, data.user.email);
+          if (data.user.first_name) {
+            localStorage.setItem(AUTH_USER_FIRST_NAME_KEY, data.user.first_name);
+          }
+          if (data.user.last_name) {
+            localStorage.setItem(AUTH_USER_LAST_NAME_KEY, data.user.last_name);
+          }
+          if (data.user.role) {
+            localStorage.setItem(AUTH_USER_ROLE_KEY, data.user.role);
+          }
+          if (data.user.tier) {
+            localStorage.setItem(AUTH_USER_TIER_KEY, data.user.tier);
+          }
         }
       }
 

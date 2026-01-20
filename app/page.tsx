@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LoginDialog } from "@/components/LoginDialog";
+import { RedirectIfAuthed } from "@/components/redirect-if-authed";
 import {
   ArrowRight,
   CheckCircle,
@@ -13,6 +14,7 @@ import {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-primary/20 selection:text-primary">
+      <RedirectIfAuthed />
       <nav className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">

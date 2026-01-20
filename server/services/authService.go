@@ -42,6 +42,13 @@ func (s *authService) Login(email, password string) (*models.User, *middleware.A
 		return nil, nil, err
 	}
 
+	if strings.TrimSpace(user.Tier) == "" {
+		user.Tier = "Basic"
+		if err := s.userRepo.Update(user); err != nil {
+			return nil, nil, fmt.Errorf("failed to update user tier: %w", err)
+		}
+	}
+
 	// Generate JWT token with user role
 	token, err := middleware.CreateToken(user.ID, user.Role, user.TenantID, user.WidgetID)
 	if err != nil {
@@ -69,6 +76,11 @@ func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.
 	role := input.Role
 	if role == "" {
 		role = "user"
+	}
+
+	tier := strings.TrimSpace(input.Tier)
+	if tier == "" {
+		tier = "Basic"
 	}
 
 	// Check if email exists
@@ -121,6 +133,7 @@ func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.
 		PassHash:  hash,
 		PhoneNum:  input.PhoneNum,
 		Role:      role,
+		Tier:      tier,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {

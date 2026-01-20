@@ -21,6 +21,7 @@ type CreateUserInput struct {
 	Password  string `json:"password" binding:"required,min=8,max=128"`
 	PhoneNum  string `json:"phone_number" binding:"omitempty,max=20"`
 	Role      string `json:"role" binding:"omitempty,oneof=user admin"`
+	Tier      string `json:"tier" binding:"omitempty,oneof=Basic Premium Pro"`
 }
 
 // UpdateUserInput holds the data for updating a user
@@ -31,6 +32,7 @@ type UpdateUserInput struct {
 	Password  *string `json:"password" binding:"omitempty,min=8,max=128"`
 	PhoneNum  *string `json:"phone_number" binding:"omitempty,max=20"`
 	Role      *string `json:"role" binding:"omitempty,oneof=user admin"`
+	Tier      *string `json:"tier" binding:"omitempty,oneof=Basic Premium Pro"`
 }
 
 // UserResponse represents a user in API responses
@@ -44,6 +46,7 @@ type UserResponse struct {
 	Email     string `json:"email"`
 	PhoneNum  string `json:"phone_number"`
 	Role      string `json:"role"`
+	Tier      string `json:"tier"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
@@ -59,6 +62,7 @@ func toUserResponse(user *models.User) *UserResponse {
 		Email:     user.Email,
 		PhoneNum:  user.PhoneNum,
 		Role:      user.Role,
+		Tier:      user.Tier,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
@@ -226,6 +230,7 @@ func CreateUser(userService services.UserService) gin.HandlerFunc {
 			Password:  input.Password,
 			PhoneNum:  input.PhoneNum,
 			Role:      input.Role,
+			Tier:      input.Tier,
 		}
 
 		user, err := userService.CreateUser(c.Request.Context(), createInput)
@@ -291,6 +296,7 @@ func UpdateUser(userService services.UserService) gin.HandlerFunc {
 			Password:  input.Password,
 			PhoneNum:  input.PhoneNum,
 			Role:      input.Role,
+			Tier:      input.Tier,
 		}
 
 		user, err := userService.UpdateUser(c.Request.Context(), int(id), updateInput)

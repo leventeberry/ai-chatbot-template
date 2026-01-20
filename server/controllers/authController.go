@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"chatbot_api/middleware"
@@ -27,13 +28,21 @@ type SignupUserInput struct {
 
 // ReturnSuccessData returns standardized success response with token and user
 func ReturnSuccessData(c *gin.Context, user *models.User, token *middleware.Authentication) {
+	tier := strings.TrimSpace(user.Tier)
+	if tier == "" {
+		tier = "Basic"
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 		"user": gin.H{
-			"id":        user.ID,
-			"email":     user.Email,
-			"tenant_id": user.TenantID,
-			"widget_id": user.WidgetID,
+			"id":         user.ID,
+			"email":      user.Email,
+			"tenant_id":  user.TenantID,
+			"widget_id":  user.WidgetID,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"role":       user.Role,
+			"tier":       tier,
 		},
 	})
 }

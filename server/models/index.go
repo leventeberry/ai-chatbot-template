@@ -17,6 +17,7 @@ type User struct {
 	PassHash  string    `json:"-"` // Excluded from JSON responses for security
 	PhoneNum  string    `json:"phone_number"`
 	Role      string    `json:"role"`
+	Tier      string    `gorm:"not null;default:Basic" json:"tier"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

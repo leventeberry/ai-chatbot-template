@@ -14,7 +14,6 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -57,39 +56,54 @@ const data = {
     email: "admin@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: LayoutGrid,
-      plan: "Pro",
-    },
-    {
-      name: "Sandbox",
-      logo: ShieldCheck,
-      plan: "Trial",
-    },
-  ],
   projects: [
     {
-      name: "Documentation",
-      url: "https://docs.example.com",
-      icon: LayoutGrid,
-    },
-    {
-      name: "API Reference",
-      url: "https://docs.example.com/api",
+      name: "Support",
+      url: "/dashboard/support",
       icon: ShieldCheck,
     },
   ],
 }
 
+type UserInfo = {
+  name: string
+  email: string
+  avatar: string
+}
+
+const AUTH_USER_EMAIL_KEY = "auth_user_email"
+const AUTH_USER_FIRST_NAME_KEY = "auth_user_first_name"
+const AUTH_USER_LAST_NAME_KEY = "auth_user_last_name"
+const AUTH_USER_ROLE_KEY = "auth_user_role"
+const AUTH_USER_TIER_KEY = "auth_user_tier"
+
 export function AppSidebar() {
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
+  const [user, setUser] = useState<UserInfo>(data.user)
+  const [userTier, setUserTier] = useState("Basic")
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (!isMounted || typeof window === "undefined") return
+    const email = localStorage.getItem(AUTH_USER_EMAIL_KEY) ?? data.user.email
+    const firstName = localStorage.getItem(AUTH_USER_FIRST_NAME_KEY) ?? ""
+    const lastName = localStorage.getItem(AUTH_USER_LAST_NAME_KEY) ?? ""
+    const role = localStorage.getItem(AUTH_USER_ROLE_KEY) ?? ""
+    const tier = localStorage.getItem(AUTH_USER_TIER_KEY) ?? "Basic"
+    const fullName = `${firstName} ${lastName}`.trim()
+    const displayName = fullName || data.user.name
+
+    setUser({
+      name: displayName,
+      email,
+      avatar: data.user.avatar,
+    })
+    setUserTier(tier || role || "Basic")
+  }, [isMounted])
 
   if (!isMounted) {
     return null
@@ -104,14 +118,22 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <div className="flex items-center gap-3 px-2 py-1.5">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-purple-600 text-sm font-bold text-primary-foreground">
+            AI
+          </div>
+          <div className="grid leading-tight">
+            <span className="text-sm font-semibold">ChatTemplate</span>
+            <span className="text-xs text-muted-foreground">{userTier}</span>
+          </div>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
