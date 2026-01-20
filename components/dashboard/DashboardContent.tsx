@@ -872,70 +872,148 @@ export default function App() {
           )}
 
           {section === "analytics" && (
-            <section className="rounded-2xl border border-border bg-card p-6 space-y-6">
+            <section className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-semibold">Analytics</h2>
                   <p className="text-sm text-muted-foreground">
-                    Basic usage insights for your widget.
+                    Usage insights for your widget.
                   </p>
                 </div>
-                <select
-                  value={timeRange}
-                  onChange={(event) => setTimeRange(event.target.value as "7" | "30" | "90")}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                >
-                  <option value="7">Last 7 days</option>
-                  <option value="30">Last 30 days</option>
-                  <option value="90">Last 90 days</option>
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {timeRangeLabel(timeRange)}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuRadioGroup
+                      value={timeRange}
+                      onValueChange={(value) => setTimeRange(value as "7" | "30" | "90")}
+                    >
+                      <DropdownMenuRadioItem value="7">Last 7 days</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="30">
+                        Last 30 days
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="90">
+                        Last 90 days
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
-              {analyticsLoading && (
-                <p className="text-sm text-muted-foreground">Loading analytics...</p>
-              )}
-              {analytics && (
-                <>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <OverviewCard
-                      label="Messages"
-                      value={analytics.messages.total.toString()}
-                      detail={`User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`}
-                    />
-                    <OverviewCard
-                      label="Sessions"
-                      value={analytics.sessions.total.toString()}
-                      detail={`Today ${analytics.sessions.today}`}
-                    />
-                    <OverviewCard
-                      label="Token usage"
-                      value={analytics.tokens.length.toString()}
-                      detail={`Last used ${formatDate(analytics.tokens[0]?.last_used_at)}`}
-                    />
-                  </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <OverviewCard
+                  label="Messages"
+                  value={analytics?.messages.total.toString() ?? "—"}
+                  detail={
+                    analytics
+                      ? `User ${analytics.messages.user} • Assistant ${analytics.messages.assistant}`
+                      : "No message data yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics}
+                />
+                <OverviewCard
+                  label="Sessions"
+                  value={analytics?.sessions.total.toString() ?? "—"}
+                  detail={
+                    analytics ? `Today ${analytics.sessions.today}` : "No session data yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics}
+                />
+                <OverviewCard
+                  label="Token usage"
+                  value={analytics?.tokens.length.toString() ?? "—"}
+                  detail={
+                    analytics
+                      ? `Last used ${formatDate(analytics.tokens[0]?.last_used_at)}`
+                      : "No token data yet"
+                  }
+                  isLoading={analyticsLoading}
+                  isEmpty={!analytics}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Per-domain activity</h3>
-                    {analytics.per_domain.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No domain activity yet.</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Sessions over time</CardTitle>
+                    <CardDescription>
+                      Trend of sessions in the selected range.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {analyticsLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-32 w-full" />
+                      </div>
                     ) : (
-                      <div className="grid gap-2 text-sm">
-                        {analytics.per_domain.map((row) => (
-                          <div
-                            key={row.origin || "unknown"}
-                            className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                          >
-                            <span>{row.origin || "Unknown origin"}</span>
-                            <span className="text-muted-foreground">
-                              {row.sessions} sessions • {row.messages} messages
-                            </span>
-                          </div>
-                        ))}
+                      <div className="rounded-lg border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                        No time-series data available yet.
                       </div>
                     )}
-                  </div>
-                </>
-              )}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Messages over time</CardTitle>
+                    <CardDescription>
+                      Trend of messages in the selected range.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {analyticsLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-32 w-full" />
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                        No time-series data available yet.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Per-domain activity</CardTitle>
+                  <CardDescription>Sessions and messages by domain.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {analyticsLoading && (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  )}
+                  {!analyticsLoading && !analytics?.per_domain.length && (
+                    <p className="text-sm text-muted-foreground">
+                      No domain activity yet.
+                    </p>
+                  )}
+                  {!analyticsLoading &&
+                    analytics?.per_domain.map((row, index, items) => (
+                      <div key={row.origin || "unknown"} className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">
+                            {row.origin || "Unknown origin"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {row.sessions} sessions • {row.messages} messages
+                          </span>
+                        </div>
+                        {index < items.length - 1 && <Separator />}
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
             </section>
           )}
 
