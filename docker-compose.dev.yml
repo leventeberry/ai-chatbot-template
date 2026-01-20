@@ -63,7 +63,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: base
-    command: sh -c "if [ ! -x node_modules/.bin/next ] || [ ! -d node_modules/@radix-ui/react-checkbox ]; then npm ci; fi && npm run dev -- --hostname 0.0.0.0 --port 3000"
+    command: sh -c "if [ ! -x node_modules/.bin/next ] || [ ! -d node_modules/@radix-ui/react-checkbox ] || [ ! -d node_modules/@better-upload/client ] || [ ! -d node_modules/react-dropzone ]; then npm ci; fi && npm run dev -- --hostname 0.0.0.0 --port 3000"
     working_dir: /app
     environment: *web-env
     volumes:

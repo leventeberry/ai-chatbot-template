@@ -1,4 +1,17 @@
+"use client"
+
+import { useUploadFiles } from "@better-upload/client"
+import { Upload } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   Card,
   CardContent,
@@ -9,8 +22,14 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { UploadDropzone } from "@/components/ui/upload-dropzone"
 
 export default function AccountPage() {
+  const { control: avatarUploadControl } = useUploadFiles({
+    route: "avatar",
+    onUploadComplete: () => {},
+  })
+
   return (
     <section className="space-y-6">
       <header className="space-y-2">
@@ -36,8 +55,41 @@ export default function AccountPage() {
               <Input type="email" placeholder="jane@company.com" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Avatar URL</label>
-              <Input placeholder="https://example.com/avatar.png" />
+              <label className="text-sm font-medium">Profile photo</label>
+              <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium">No photo uploaded</p>
+                  <p className="text-xs text-muted-foreground">
+                    JPG or PNG up to 5MB.
+                  </p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="icon" variant="outline" aria-label="Upload photo">
+                      <Upload className="size-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-xl bg-background p-0">
+                    <div className="space-y-4 p-6">
+                      <DialogHeader>
+                        <DialogTitle>Upload profile photo</DialogTitle>
+                        <DialogDescription>
+                          Drag and drop an image, or click to browse.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <UploadDropzone
+                        control={avatarUploadControl}
+                        accept="image/*"
+                        description={{
+                          maxFiles: 1,
+                          maxFileSize: "5MB",
+                          fileTypes: "JPG, PNG",
+                        }}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
             <Button>Save profile</Button>
           </CardContent>
