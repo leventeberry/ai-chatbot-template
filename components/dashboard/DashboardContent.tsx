@@ -153,6 +153,11 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   >([])
   const [conversationLoading, setConversationLoading] = useState(false)
   const [conversationsLoading, setConversationsLoading] = useState(false)
+  const [conversationStatus, setConversationStatus] = useState<
+    "all" | "open" | "resolved"
+  >("all")
+  const [conversationDateRange, setConversationDateRange] =
+    useState<"7" | "30" | "90">("30")
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -1018,62 +1023,141 @@ export default function App() {
           )}
 
           {section === "conversations" && (
-            <section className="rounded-2xl border border-border bg-card p-6 space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold">Conversations</h2>
-                <p className="text-sm text-muted-foreground">
-                  Recent chat sessions for this widget.
-                </p>
-              </div>
-              <div className="grid gap-6 md:grid-cols-[1fr_1.5fr]">
-                <div className="space-y-2">
-                  {conversations.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No conversations yet.</p>
-                  )}
-                  {conversations.map((conversation) => (
-                    <button
-                      key={conversation.id}
-                      onClick={() => {
-                        setSelectedConversation(conversation)
-                        void loadConversationMessages(conversation.id)
-                      }}
-                      className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${
-                        selectedConversation?.id === conversation.id
-                          ? "border-primary/60 bg-primary/10"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      <div className="font-medium">Session {conversation.session_id}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {conversation.origin || "Unknown origin"} •{" "}
-                        {conversation.message_count} messages •{" "}
-                        {formatDate(conversation.created_at)}
-                      </div>
-                    </button>
-                  ))}
+            <section className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold">Conversations</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Review recent chat sessions for this widget.
+                  </p>
                 </div>
-
-                <div className="rounded-lg border border-border bg-background p-4 min-h-[220px]">
-                  {conversationLoading && (
-                    <p className="text-sm text-muted-foreground">Loading messages...</p>
-                  )}
-                  {!conversationLoading && conversationMessages.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      Select a session to view messages.
-                    </p>
-                  )}
-                  <div className="space-y-3 text-sm">
-                    {conversationMessages.map((message) => (
-                      <div key={message.id} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{message.role}</span>
-                          <span>{formatDate(message.created_at)}</span>
-                        </div>
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        {timeRangeLabel(conversationDateRange)}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuRadioGroup
+                        value={conversationDateRange}
+                        onValueChange={(value) =>
+                          setConversationDateRange(value as "7" | "30" | "90")
+                        }
+                      >
+                        <DropdownMenuRadioItem value="7">
+                          Last 7 days
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="30">
+                          Last 30 days
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="90">
+                          Last 90 days
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-1">
+                    {(["all", "open", "resolved"] as const).map((status) => (
+                      <Button
+                        key={status}
+                        variant={conversationStatus === status ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setConversationStatus(status)}
+                      >
+                        {status === "all"
+                          ? "All"
+                          : status === "open"
+                            ? "Open"
+                            : "Resolved"}
+                      </Button>
                     ))}
                   </div>
                 </div>
+              </div>
+              <div className="grid gap-6 md:grid-cols-[1fr_1.5fr]">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Conversation list</CardTitle>
+                    <CardDescription>
+                      Showing latest sessions for the selected range.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {conversationsLoading && (
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    )}
+                    {!conversationsLoading && conversations.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No conversations yet.
+                      </p>
+                    )}
+                    {!conversationsLoading &&
+                      conversations.map((conversation, index) => (
+                        <div key={conversation.id} className="space-y-2">
+                          <button
+                            onClick={() => {
+                              setSelectedConversation(conversation)
+                              void loadConversationMessages(conversation.id)
+                            }}
+                            className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                              selectedConversation?.id === conversation.id
+                                ? "border-primary/60 bg-primary/10"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">
+                                Session {conversation.session_id}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {conversation.message_count} messages
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {conversation.origin || "Unknown origin"} •{" "}
+                              {formatDate(conversation.created_at)}
+                            </div>
+                          </button>
+                          {index < conversations.length - 1 && <Separator />}
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="min-h-[320px]">
+                  <CardHeader>
+                    <CardTitle className="text-base">Transcript</CardTitle>
+                    <CardDescription>
+                      Messages for the selected conversation.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {conversationLoading && (
+                      <p className="text-sm text-muted-foreground">Loading messages...</p>
+                    )}
+                    {!conversationLoading && conversationMessages.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Select a session to view messages.
+                      </p>
+                    )}
+                    <div className="space-y-3 text-sm">
+                      {conversationMessages.map((message) => (
+                        <div key={message.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="uppercase tracking-wide">{message.role}</span>
+                            <span>{formatDate(message.created_at)}</span>
+                          </div>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </section>
           )}
