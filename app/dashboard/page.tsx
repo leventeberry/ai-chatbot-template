@@ -1,8 +1,4 @@
-import { DashboardContent } from "@/components/dashboard/DashboardContent"
-
-export default function DashboardPage() {
-  return <DashboardContent section="overview" />
-}
+export { default } from "./overview/page"
 
 /* Legacy dashboard page content retained for reference.
 "use client"

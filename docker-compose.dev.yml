@@ -27,6 +27,42 @@ x-web-env: &web-env
   WATCHPACK_POLLING: "true"
 
 services:
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: unless-stopped
+    profiles:
+      - tools
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      HTTP_USER: admin
+      HTTP_PASSWORD: admin
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - main
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    profiles:
+      - tools
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@goapi.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - main
+
   api:
     build:
       context: ./server

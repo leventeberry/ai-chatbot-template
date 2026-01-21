@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { ChatWidget } from "@/components/ChatWidget";
-import { LoginDialog } from "@/components/LoginDialog";
+import { ChatWidget } from "@/components/chat-widget";
+import { LoginDialog } from "@/components/login-dialog";
 import { RedirectIfAuthed } from "@/components/redirect-if-authed";
 import {
   ArrowRight,

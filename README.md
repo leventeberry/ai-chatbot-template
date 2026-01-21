@@ -43,6 +43,29 @@ For local configuration, copy `env.example` to `.env` and edit as needed:
 cp env.example .env
 ```
 
+### Hostinger Docker Manager (full stack)
+
+If you are deploying with Hostinger's Docker Manager, set these environment pairs:
+
+- `API_BASE_URL=http://api:8080`
+- `DOCKER_ENV=true`
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+- `JWT_SECRET`
+- `REDIS_ENABLED=true`, `REDIS_PASSWORD`
+
+After deployment, verify the web container can reach `http://api:8080/api/v1/readyz`
+through the Next.js proxy (`/api/*`).
+
+#### Redis memory overcommit warning
+
+On the VPS host (outside containers), enable memory overcommit to avoid Redis warnings:
+
+```bash
+echo "vm.overcommit_memory = 1" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+sudo sysctl vm.overcommit_memory=1
+```
+
 Run the dev override (hot reload + volume mounts):
 
 ```bash

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { ChatWidget } from "@/components/ChatWidget"
+import { ChatWidget } from "@/components/chat-widget"
 
 export default function WidgetEmbedPage() {
   const params = useSearchParams()
