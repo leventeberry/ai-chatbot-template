@@ -150,6 +150,7 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
   const [tokenError, setTokenError] = useState<string | null>(null)
   const [tokenBusy, setTokenBusy] = useState(false)
   const [tokenCopied, setTokenCopied] = useState(false)
+  const [embedCopied, setEmbedCopied] = useState(false)
   const [tokenToRevoke, setTokenToRevoke] = useState<TokenSummary | null>(null)
 
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
@@ -447,6 +448,16 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     }
   }
 
+  const handleCopyEmbedSnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(embedSnippet)
+      setEmbedCopied(true)
+      window.setTimeout(() => setEmbedCopied(false), 1500)
+    } catch {
+      setEmbedCopied(false)
+    }
+  }
+
   const handleSaveAllowedOrigin = async () => {
     if (!widgetId) return
     setIsSaving(true)
@@ -478,6 +489,17 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
     if (!currentOrigin) return
     setAllowedOrigin(currentOrigin)
   }
+
+  const embedSnippet = useMemo(
+    () =>
+      buildEmbedSnippet({
+        widgetId,
+        widgetName,
+        allowedOrigin: normalizeAllowedOrigin(allowedOrigin) || currentOrigin,
+        token: createdToken,
+      }),
+    [allowedOrigin, createdToken, currentOrigin, widgetId, widgetName]
+  )
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10 py-6">
@@ -797,19 +819,20 @@ export function DashboardContent({ section }: { section: DashboardSection }) {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Embed snippet</CardTitle>
-                  <CardDescription>Use this in your Next.js app.</CardDescription>
+                  <CardDescription>Use this HTML snippet on any site.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>Copy and paste this into your app.</span>
+                    <Button size="sm" variant="outline" onClick={handleCopyEmbedSnippet}>
+                      {embedCopied ? "Copied" : "Copy snippet"}
+                    </Button>
+                  </div>
                   <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
-{`import { ChatWidget } from "@/components/ChatWidget";
-
-// Set NEXT_PUBLIC_WIDGET_TOKEN to your widget token
-export default function App() {
-  return <ChatWidget />;
-}`}
+{embedSnippet}
                   </pre>
                   <p className="text-xs text-muted-foreground">
-                    Required header: <code>Authorization: Bearer &lt;token&gt;</code>
+                    Load the script from the domain hosting your widget.
                   </p>
                 </CardContent>
               </Card>
@@ -838,19 +861,20 @@ export default function App() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Embed snippet</CardTitle>
-                    <CardDescription>Drop this into your Next.js app.</CardDescription>
+                    <CardDescription>Drop this script tag into any HTML page.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>Copy and paste this into your app.</span>
+                      <Button size="sm" variant="outline" onClick={handleCopyEmbedSnippet}>
+                        {embedCopied ? "Copied" : "Copy snippet"}
+                      </Button>
+                    </div>
                     <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
-{`import { ChatWidget } from "@/components/ChatWidget";
-
-// Set NEXT_PUBLIC_WIDGET_TOKEN to your widget token
-export default function App() {
-  return <ChatWidget />;
-}`}
+{embedSnippet}
                     </pre>
                     <p className="text-xs text-muted-foreground">
-                      Required header: <code>Authorization: Bearer &lt;token&gt;</code>
+                      Set <code>data-origin</code> to the domain where you embed the widget.
                     </p>
                     <div className="text-xs text-muted-foreground space-y-1">
                       <p>Safety tips:</p>
@@ -1310,6 +1334,35 @@ function timeRangeLabel(value: "7" | "30" | "90") {
   if (value === "7") return "Last 7 days"
   if (value === "90") return "Last 90 days"
   return "Last 30 days"
+}
+
+function buildEmbedSnippet({
+  widgetId,
+  widgetName,
+  allowedOrigin,
+  token,
+}: {
+  widgetId: string | null
+  widgetName: string
+  allowedOrigin: string
+  token: string | null
+}) {
+  const safeName = widgetName.trim() || "AI Assistant"
+  const safeOrigin = allowedOrigin || "https://example.com"
+  const safeToken = token?.trim() || "<YOUR_WIDGET_TOKEN>"
+  const safeWidgetId = widgetId || "<YOUR_WIDGET_ID>"
+  const safeDomain = typeof window !== "undefined"
+    ? window.location.origin
+    : "https://YOUR_DOMAIN"
+  return `<script
+  src="${safeDomain}/widget.js"
+  data-widget-id="${safeWidgetId}"
+  data-token="${safeToken}"
+  data-origin="${safeOrigin}"
+  async
+></script>
+
+<!-- Widget: ${safeName} -->`
 }
 
 function OverviewCard({

@@ -116,6 +116,11 @@ func normalizeSessionID(sessionID string) string {
 }
 
 func resolveRequestOrigin(c *gin.Context) string {
+	embedOrigin := strings.TrimSpace(c.GetHeader("X-Widget-Origin"))
+	if embedOrigin != "" {
+		return embedOrigin
+	}
+
 	origin := strings.TrimSpace(c.GetHeader("Origin"))
 	if origin != "" {
 		return origin

@@ -65,7 +65,13 @@ const DEFAULT_WELCOME_MESSAGE = "I am here to help answer your questions. Ask me
 const GLOBAL_ASSISTANT_AVATAR_URL =
   process.env.NEXT_PUBLIC_CHEXI_AVATAR_URL || "";
 
-export function ChatWidget() {
+type ChatWidgetProps = {
+  widgetId?: string | null;
+  token?: string | null;
+  origin?: string | null;
+};
+
+export function ChatWidget({ token, origin }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -90,6 +96,15 @@ export function ChatWidget() {
   const hasAutoOpenedRef = useRef(false);
 
   const assistantAvatarUrl = GLOBAL_ASSISTANT_AVATAR_URL || undefined;
+  const resolvedToken = token?.trim() || WIDGET_AUTH_TOKEN || undefined;
+  const resolvedOrigin = origin?.trim() || undefined;
+  const requestHeaders =
+    resolvedToken || resolvedOrigin
+      ? {
+          ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
+          ...(resolvedOrigin ? { "X-Widget-Origin": resolvedOrigin } : {}),
+        }
+      : undefined;
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -113,9 +128,7 @@ export function ChatWidget() {
 
       try {
         const res = await fetch("/api/v1/widget/config", {
-          headers: WIDGET_AUTH_TOKEN
-            ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
-            : undefined,
+          headers: requestHeaders,
         });
         if (!res.ok) throw new Error("Failed to fetch widget config.");
         const data = (await res.json()) as WidgetConfig;
@@ -157,9 +170,7 @@ export function ChatWidget() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(WIDGET_AUTH_TOKEN
-              ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
-              : {}),
+            ...(requestHeaders || {}),
           },
         });
         if (!res.ok) throw new Error("Failed to create session.");
@@ -202,9 +213,7 @@ export function ChatWidget() {
           `/api/v1/chat/history?session_id=${encodeURIComponent(sessionId)}`,
           {
             credentials: "include",
-            headers: WIDGET_AUTH_TOKEN
-              ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
-              : undefined,
+            headers: requestHeaders,
           }
         );
         if (!res.ok) throw new Error("Failed to fetch chat history.");
@@ -264,9 +273,7 @@ export function ChatWidget() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(WIDGET_AUTH_TOKEN
-            ? { Authorization: `Bearer ${WIDGET_AUTH_TOKEN}` }
-            : {}),
+          ...(requestHeaders || {}),
         },
         credentials: "include",
         body: JSON.stringify({

@@ -88,6 +88,11 @@ Global assistant branding:
 - `Chexi AI Assistant` is the default assistant name.
 - Set `NEXT_PUBLIC_CHEXI_AVATAR_URL` to use a global avatar image for the widget.
 
+Widget embed:
+- Use the dashboard snippet to embed the widget on any site with a `<script>` tag.
+- `data-origin` must match the allowed origin configured for the widget.
+- Tokens are secrets; do not commit them to public repositories.
+
 Widget auth (Phase 1):
 - Set `WIDGET_AUTH_DISABLED=false` to enforce token auth.
 - Provide `WIDGET_TOKEN`, `WIDGET_TENANT_ID`, and `WIDGET_ID` in the API env.

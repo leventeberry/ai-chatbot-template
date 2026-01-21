@@ -19,6 +19,12 @@ func WidgetCORSMiddleware(widgetRepo repositories.WidgetRepository) gin.HandlerF
 			return
 		}
 
+		embedOrigin := strings.TrimSpace(c.GetHeader("X-Widget-Origin"))
+		originForValidation := origin
+		if embedOrigin != "" {
+			originForValidation = embedOrigin
+		}
+
 		allowedOrigin := resolveAllowedOrigin(c, widgetRepo)
 		if allowedOrigin == "" {
 			c.Header("Access-Control-Allow-Origin", origin)
@@ -26,7 +32,7 @@ func WidgetCORSMiddleware(widgetRepo repositories.WidgetRepository) gin.HandlerF
 			return
 		}
 
-		if origin != allowedOrigin {
+		if originForValidation != allowedOrigin {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Origin not allowed"})
 			return
 		}
