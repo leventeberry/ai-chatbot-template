@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"chatbot_api/initializers"
+	"chatbot_api/infrastructure"
 	"chatbot_api/logger"
 	"chatbot_api/middleware"
 	"chatbot_api/models"
@@ -27,10 +27,10 @@ type SeedUser struct {
 }
 
 func main() {
-	initializers.Init()
-	defer initializers.CloseRedis()
+	infrastructure.Init()
+	defer infrastructure.CloseRedis()
 
-	db := initializers.DB
+	db := infrastructure.DB
 	if db == nil {
 		logger.Log.Fatal().Msg("Database connection unavailable for seeding")
 	}

@@ -10,7 +10,7 @@ import (
 
 	"chatbot_api/container"
 	"chatbot_api/docs"
-	"chatbot_api/initializers"
+	"chatbot_api/infrastructure"
 	"chatbot_api/logger"
 	"chatbot_api/middleware"
 	"chatbot_api/routes"
@@ -47,15 +47,15 @@ func main() {
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	// Initialize environment variables, database connection, and run migrations
-	initializers.Init()
+	infrastructure.Init()
 
 	// Initialize cache client (Redis or no-op)
 	// Uses helper function from initializers to centralize cache creation logic
-	cacheClient := initializers.GetCacheClient()
+	cacheClient := infrastructure.GetCacheClient()
 
 	// Create dependency injection container using Factory Pattern
 	// This initializes all repositories, services, and their dependencies
-	appContainer := container.NewContainer(initializers.DB, cacheClient)
+	appContainer := container.NewContainer(infrastructure.DB, cacheClient)
 
 	// Create a Gin router
 	router := gin.New()
@@ -114,7 +114,7 @@ func main() {
 	}
 
 	// Cleanup: close Redis connection if it exists
-	initializers.CloseRedis()
+	infrastructure.CloseRedis()
 
 	logger.Log.Info().Msg("Server exited")
 }

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"chatbot_api/container"
-	"chatbot_api/initializers"
+	"chatbot_api/infrastructure"
 	"chatbot_api/routes"
 
 	"github.com/gin-gonic/gin"
@@ -33,10 +33,10 @@ func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 
 	// Initialize database (use test database if available)
-	initializers.Init()
+	infrastructure.Init()
 
 	// Create container
-	testContainer = container.NewContainer(initializers.DB, initializers.GetCacheClient())
+	testContainer = container.NewContainer(infrastructure.DB, infrastructure.GetCacheClient())
 
 	// Create router
 	testRouter = gin.New()
