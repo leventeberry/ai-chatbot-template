@@ -40,10 +40,20 @@ const AUTH_USER_LAST_NAME_KEY = "auth_user_last_name";
 const AUTH_USER_ROLE_KEY = "auth_user_role";
 const AUTH_USER_TIER_KEY = "auth_user_tier";
 
-export function LoginDialog() {
+type LoginDialogProps = {
+  triggerLabel?: string;
+  defaultMode?: "login" | "signup";
+  triggerClassName?: string;
+};
+
+export function LoginDialog({
+  triggerLabel = "Log in",
+  defaultMode = "login",
+  triggerClassName = "text-sm font-medium text-muted-foreground hover:text-foreground",
+}: LoginDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,8 +65,14 @@ export function LoginDialog() {
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
+    if (open) {
+      setMode(defaultMode);
+      setError(null);
+      setSuccessMessage(null);
+      return;
+    }
     if (!open) {
-      setMode("login");
+      setMode(defaultMode);
       setError(null);
       setSuccessMessage(null);
       setPassword("");
@@ -148,8 +164,10 @@ export function LoginDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger className="text-sm font-medium text-muted-foreground hover:text-foreground">
-        Log in
+      <DialogTrigger asChild>
+        <button type="button" className={triggerClassName}>
+          {triggerLabel}
+        </button>
       </DialogTrigger>
       <DialogContent className="w-[92vw] max-w-md rounded-2xl bg-background p-6">
         <DialogHeader className="gap-1">
