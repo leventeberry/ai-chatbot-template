@@ -192,13 +192,20 @@ func healthCheckHandler(container *container.Container) gin.HandlerFunc {
 		}
 
 		// Check Redis/cache connectivity (if enabled)
+		type cachePinger interface {
+			Ping(ctx context.Context) error
+		}
 		if container.Cache != nil {
-			if err := container.Cache.Ping(ctx); err != nil {
-				health["cache"] = gin.H{"status": "unhealthy", "error": err.Error()}
-				// Cache is optional, so don't fail overall health if cache is down
-				// but still report it in the response
+			if pinger, ok := container.Cache.(cachePinger); ok {
+				if err := pinger.Ping(ctx); err != nil {
+					health["cache"] = gin.H{"status": "unhealthy", "error": err.Error()}
+					// Cache is optional, so don't fail overall health if cache is down
+					// but still report it in the response
+				} else {
+					health["cache"] = gin.H{"status": "healthy"}
+				}
 			} else {
-				health["cache"] = gin.H{"status": "healthy"}
+				health["cache"] = gin.H{"status": "disabled"}
 			}
 		} else {
 			health["cache"] = gin.H{"status": "disabled"}

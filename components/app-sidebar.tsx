@@ -95,6 +95,9 @@ const emptySnapshot: UserSnapshot = {
   tier: "Basic",
 }
 
+let cachedSnapshot: UserSnapshot = emptySnapshot
+let cachedValues: UserSnapshot = emptySnapshot
+
 const subscribeToStorage = (callback: () => void) => {
   if (typeof window === "undefined") {
     return () => undefined
@@ -106,13 +109,25 @@ const subscribeToStorage = (callback: () => void) => {
 
 const getSnapshot = (): UserSnapshot => {
   if (typeof window === "undefined") return emptySnapshot
-  return {
+  const nextSnapshot: UserSnapshot = {
     email: localStorage.getItem(AUTH_USER_EMAIL_KEY) ?? data.user.email,
     firstName: localStorage.getItem(AUTH_USER_FIRST_NAME_KEY) ?? "",
     lastName: localStorage.getItem(AUTH_USER_LAST_NAME_KEY) ?? "",
     role: localStorage.getItem(AUTH_USER_ROLE_KEY) ?? "",
     tier: localStorage.getItem(AUTH_USER_TIER_KEY) ?? "Basic",
   }
+  if (
+    nextSnapshot.email === cachedValues.email &&
+    nextSnapshot.firstName === cachedValues.firstName &&
+    nextSnapshot.lastName === cachedValues.lastName &&
+    nextSnapshot.role === cachedValues.role &&
+    nextSnapshot.tier === cachedValues.tier
+  ) {
+    return cachedSnapshot
+  }
+  cachedValues = nextSnapshot
+  cachedSnapshot = nextSnapshot
+  return cachedSnapshot
 }
 
 export function AppSidebar() {

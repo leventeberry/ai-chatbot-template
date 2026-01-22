@@ -49,20 +49,21 @@ func main() {
 	// Initialize environment variables, database connection, and run migrations
 	infrastructure.Init()
 
-	// Initialize cache client (Redis or no-op)
-	// Uses helper function from initializers to centralize cache creation logic
-	cacheClient := infrastructure.GetCacheClient()
+	// Initialize user cache client (Redis or no-op)
+	userCache := infrastructure.GetUserCacheClient()
+	// Initialize rate limiter client (Redis-backed or nil)
+	rateLimiter := infrastructure.GetRateLimiterClient()
 
 	// Create dependency injection container using Factory Pattern
 	// This initializes all repositories, services, and their dependencies
-	appContainer := container.NewContainer(infrastructure.DB, cacheClient)
+	appContainer := container.NewContainer(infrastructure.DB, userCache)
 
 	// Create a Gin router
 	router := gin.New()
 
 	// Add middleware: rate limiter, request logger, and recovery
 	// Rate limiter uses Redis if available, otherwise falls back to in-memory
-	router.Use(middleware.RateLimitMiddlewareWithCache(cacheClient))
+	router.Use(middleware.RateLimitMiddlewareWithCache(rateLimiter))
 	router.Use(middleware.RequestLogger())
 	router.Use(gin.Recovery())
 

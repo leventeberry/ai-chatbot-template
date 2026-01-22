@@ -178,14 +178,22 @@ func connectRedis() {
 	logger.Log.Info().Str("address", addr).Msg("Redis connection established")
 }
 
-// GetCacheClient returns a cache client instance
-// Returns Redis cache if Redis is available, otherwise returns no-op cache
-// This centralizes cache client creation logic
-func GetCacheClient() cache.Cache {
+// GetUserCacheClient returns a user cache client instance.
+// Returns Redis cache if Redis is available, otherwise returns no-op cache.
+func GetUserCacheClient() cache.UserCache {
 	if RedisClient != nil {
-		return cache.NewRedisCache(RedisClient)
+		return cache.NewRedisUserCache(RedisClient)
 	}
-	return cache.NewNoOpCache()
+	return cache.NewNoOpUserCache()
+}
+
+// GetRateLimiterClient returns a rate limiter implementation backed by Redis.
+// Returns nil when Redis is not available to allow in-memory fallback.
+func GetRateLimiterClient() cache.RateLimiter {
+	if RedisClient != nil {
+		return cache.NewRedisRateLimiter(RedisClient)
+	}
+	return nil
 }
 
 // CloseRedis closes the Redis connection if it exists

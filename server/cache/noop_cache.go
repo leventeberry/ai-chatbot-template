@@ -7,12 +7,12 @@ import (
 	"chatbot_api/models"
 )
 
-// noOpCache implements Cache interface as a no-op (no operation) cache
+// noOpCache implements UserCache as a no-op (no operation) cache
 // Used when Redis is disabled or unavailable
 type noOpCache struct{}
 
-// NewNoOpCache creates a new no-op cache implementation
-func NewNoOpCache() Cache {
+// NewNoOpUserCache creates a new no-op user cache implementation.
+func NewNoOpUserCache() UserCache {
 	return &noOpCache{}
 }
 

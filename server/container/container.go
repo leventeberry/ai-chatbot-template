@@ -14,7 +14,7 @@ import (
 // Implements Dependency Injection Container pattern
 type Container struct {
 	DB                *gorm.DB
-	Cache             cache.Cache
+	Cache             cache.UserCache
 	RepositoryFactory *factories.RepositoryFactory
 	ServiceFactory    *factories.ServiceFactory
 	UserRepository    repositories.UserRepository
@@ -31,7 +31,7 @@ type Container struct {
 
 // NewContainer creates and initializes a new dependency injection container
 // Uses Factory Pattern to create all dependencies
-func NewContainer(db *gorm.DB, cacheClient cache.Cache) *Container {
+func NewContainer(db *gorm.DB, cacheClient cache.UserCache) *Container {
 	var (
 		repoFactory      *factories.RepositoryFactory
 		serviceFactory   *factories.ServiceFactory

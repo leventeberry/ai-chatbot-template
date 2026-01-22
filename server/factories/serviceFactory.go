@@ -16,7 +16,7 @@ type ServiceFactory struct {
 	apiKeyRepo       repositories.ApiKeyRepository
 	tenantRepo       repositories.TenantRepository
 	widgetRepo       repositories.WidgetRepository
-	cache            cache.Cache
+	cache            cache.UserCache
 }
 
 // NewServiceFactory creates a new service factory
@@ -27,7 +27,7 @@ func NewServiceFactory(
 	apiKeyRepo repositories.ApiKeyRepository,
 	tenantRepo repositories.TenantRepository,
 	widgetRepo repositories.WidgetRepository,
-	cacheClient cache.Cache,
+	cacheClient cache.UserCache,
 ) *ServiceFactory {
 	return &ServiceFactory{
 		userRepo:         userRepo,

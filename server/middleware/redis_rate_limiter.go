@@ -10,14 +10,14 @@ import (
 // RedisRateLimiter implements rate limiting using Redis
 // Uses a sliding window counter approach suitable for distributed systems
 type RedisRateLimiter struct {
-	cache            cache.Cache
+	cache             cache.RateLimiter
 	requestsPerMinute int
 	burstSize         int
 	window            time.Duration
 }
 
 // NewRedisRateLimiter creates a new Redis-based rate limiter
-func NewRedisRateLimiter(cacheClient cache.Cache, config RateLimiterConfig) *RedisRateLimiter {
+func NewRedisRateLimiter(cacheClient cache.RateLimiter, config RateLimiterConfig) *RedisRateLimiter {
 	return &RedisRateLimiter{
 		cache:             cacheClient,
 		requestsPerMinute: config.RequestsPerMinute,

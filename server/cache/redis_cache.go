@@ -15,15 +15,25 @@ import (
 // - GetUserByEmail / SetUserByEmail: "user:email:{email}"
 // - DeleteUser: deletes both ID and email keys for a user
 
-// redisCache implements Cache interface using Redis
+// redisCache implements UserCache and RateLimiter using Redis
 type redisCache struct {
 	client *redis.Client
 }
 
-// NewRedisCache creates a new Redis cache implementation
-func NewRedisCache(client *redis.Client) Cache {
+// NewRedisUserCache creates a new Redis-backed user cache.
+func NewRedisUserCache(client *redis.Client) UserCache {
 	if client == nil {
-		return NewNoOpCache()
+		return NewNoOpUserCache()
+	}
+	return &redisCache{
+		client: client,
+	}
+}
+
+// NewRedisRateLimiter creates a new Redis-backed rate limiter.
+func NewRedisRateLimiter(client *redis.Client) RateLimiter {
+	if client == nil {
+		return nil
 	}
 	return &redisCache{
 		client: client,

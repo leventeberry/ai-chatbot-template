@@ -16,12 +16,12 @@ import (
 // userService implements UserService interface
 type userService struct {
 	userRepo repositories.UserRepository
-	cache    cache.Cache
+	cache    cache.UserCache
 }
 
 // NewUserService creates a new instance of UserService
 // Factory function for creating user service
-func NewUserService(userRepo repositories.UserRepository, cacheClient cache.Cache) UserService {
+func NewUserService(userRepo repositories.UserRepository, cacheClient cache.UserCache) UserService {
 	return &userService{
 		userRepo: userRepo,
 		cache:    cacheClient,

@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	infrastructure.Init()
 
 	// Create container
-	testContainer = container.NewContainer(infrastructure.DB, infrastructure.GetCacheClient())
+	testContainer = container.NewContainer(infrastructure.DB, infrastructure.GetUserCacheClient())
 
 	// Create router
 	testRouter = gin.New()
