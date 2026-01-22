@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useDashboardData, type DashboardSection } from "../../../hooks/use-dashboard-data"
+import { useDashboardData, type DashboardSection } from "@/hooks/use-dashboard-data"
 
 export type DashboardData = ReturnType<typeof useDashboardData>
 

@@ -1,7 +1,10 @@
 "use client"
 
-import { DashboardShell } from "../_components/dashboard-shell"
-import { ColorField } from "../../../lib/dashboard-helpers"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import {
+  ColorField,
+  DashboardSectionHeader,
+} from "@/components/dashboard/dashboard-helpers"
 import {
   Card,
   CardContent,
@@ -18,12 +21,10 @@ export default function SettingsPage() {
     <DashboardShell section="settings">
       {(data) => (
         <section className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold">Widget Settings</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure widget behavior and appearance.
-            </p>
-          </div>
+          <DashboardSectionHeader
+            title="Widget Settings"
+            description="Configure widget behavior and appearance."
+          />
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>

@@ -125,7 +125,6 @@ function MorphingPopoverTrigger({
   }
 
   if (asChild && isValidElement(children)) {
-    // eslint-disable-next-line react-hooks/static-components
     const MotionComponent = motion.create(children.type as React.ElementType);
     const childProps = children.props as Record<string, unknown>;
 

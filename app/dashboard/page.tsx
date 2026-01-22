@@ -635,7 +635,7 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     <Field label="Embed snippet">
                       <pre className="rounded-lg border border-border bg-muted px-3 py-2 text-xs overflow-x-auto">
-{`import { ChatWidget } from "@/components/ChatWidget";
+{`import { ChatWidget } from "@/components/chat-widget";
 
 // Set NEXT_PUBLIC_WIDGET_TOKEN to your widget token
 export default function App() {

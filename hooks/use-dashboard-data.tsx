@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { buildEmbedSnippet } from "../lib/dashboard-helpers"
+import { buildEmbedSnippet } from "@/components/dashboard/dashboard-helpers"
 
 export type DashboardSection =
   | "overview"
@@ -90,7 +90,6 @@ export function useDashboardData(section: DashboardSection) {
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [isReady, setIsReady] = useState(false)
 
-  const [widget, setWidget] = useState<Widget | null>(null)
   const [widgetName, setWidgetName] = useState("")
   const [allowedOrigin, setAllowedOrigin] = useState("")
 
@@ -164,50 +163,38 @@ export function useDashboardData(section: DashboardSection) {
   const needsAnalytics = section === "analytics" || section === "overview"
   const needsConversations = section === "conversations" || section === "overview"
 
-  useEffect(() => {
-    if (!authToken || !widgetId) return
-    if (needsWidget) void loadWidget()
-    if (needsTokens) void loadTokens()
-    if (needsAnalytics) void loadAnalytics(timeRange)
-    if (needsConversations) void loadConversations()
-  }, [
-    authToken,
-    widgetId,
-    timeRange,
-    needsWidget,
-    needsTokens,
-    needsAnalytics,
-    needsConversations,
-  ])
-
   const currentOrigin = useMemo(() => {
     if (typeof window === "undefined") return ""
     return window.location.origin
   }, [])
 
-  const apiFetch = async (path: string, options: RequestInit = {}) => {
-    if (!authToken) throw new Error("Missing auth token")
-    const res = await fetch(path, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-        ...(options.headers || {}),
-      },
-    })
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as { error?: string } | null
-      throw new Error(data?.error || "Request failed")
-    }
-    return res
-  }
+  const apiFetch = useCallback(
+    async (path: string, options: RequestInit = {}) => {
+      if (!authToken) throw new Error("Missing auth token")
+      const res = await fetch(path, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+          ...(options.headers || {}),
+        },
+      })
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null
+        throw new Error(data?.error || "Request failed")
+      }
+      return res
+    },
+    [authToken]
+  )
 
-  const loadWidget = async () => {
+  const loadWidget = useCallback(async () => {
     if (!widgetId) return
     try {
       const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}`)
       const data = (await res.json()) as Widget
-      setWidget(data)
       setWidgetName(data.name || "")
       setAllowedOrigin(data.allowed_origin || "")
       const parsed = parseWidgetConfig(data.config)
@@ -229,9 +216,9 @@ export function useDashboardData(section: DashboardSection) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load widget")
     }
-  }
+  }, [apiFetch, widgetId])
 
-  const loadTokens = async () => {
+  const loadTokens = useCallback(async () => {
     if (!widgetId) return
     try {
       const res = await apiFetch(`/api/v1/dashboard/widgets/${widgetId}/tokens`)
@@ -240,9 +227,9 @@ export function useDashboardData(section: DashboardSection) {
     } catch (err) {
       setTokenError(err instanceof Error ? err.message : "Failed to load tokens")
     }
-  }
+  }, [apiFetch, widgetId])
 
-  const loadAnalytics = async (days: "7" | "30" | "90") => {
+  const loadAnalytics = useCallback(async (days: "7" | "30" | "90") => {
     if (!widgetId) return
     setAnalyticsLoading(true)
     try {
@@ -259,9 +246,9 @@ export function useDashboardData(section: DashboardSection) {
     } finally {
       setAnalyticsLoading(false)
     }
-  }
+  }, [apiFetch, widgetId])
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!widgetId) return
     setConversationsLoading(true)
     try {
@@ -275,7 +262,27 @@ export function useDashboardData(section: DashboardSection) {
     } finally {
       setConversationsLoading(false)
     }
-  }
+  }, [apiFetch, widgetId])
+
+  useEffect(() => {
+    if (!authToken || !widgetId) return
+    if (needsWidget) void loadWidget()
+    if (needsTokens) void loadTokens()
+    if (needsAnalytics) void loadAnalytics(timeRange)
+    if (needsConversations) void loadConversations()
+  }, [
+    authToken,
+    widgetId,
+    timeRange,
+    needsWidget,
+    needsTokens,
+    needsAnalytics,
+    needsConversations,
+    loadWidget,
+    loadTokens,
+    loadAnalytics,
+    loadConversations,
+  ])
 
   const loadConversationMessages = async (conversationId: string) => {
     setConversationLoading(true)
@@ -479,12 +486,9 @@ export function useDashboardData(section: DashboardSection) {
   )
 
   return {
-    section,
-    authToken,
     widgetId,
     tenantId,
     isReady,
-    widget,
     widgetName,
     setWidgetName,
     allowedOrigin,
@@ -515,14 +519,9 @@ export function useDashboardData(section: DashboardSection) {
     setOpenOnLoad,
     showOnline,
     setShowOnline,
-    systemPrompt,
-    setSystemPrompt,
-    documentation,
-    setDocumentation,
     isSaving,
     saveMessage,
     error,
-    setError,
     tokens,
     tokenName,
     setTokenName,

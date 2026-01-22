@@ -37,10 +37,10 @@ Build and run the full stack from the repo root:
 docker compose up --build
 ```
 
-For local configuration, copy `env.example` to `.env` and edit as needed:
+For local configuration, copy `.env.example` to `.env` and edit as needed:
 
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
 ### Hostinger Docker Manager (full stack)
@@ -145,7 +145,7 @@ Sanity check the CLI (demo product + price):
 make stripe-check
 ```
 
-Stripe keys are required for local testing. Copy `env.example` to `.env` and set:
+Stripe keys are required for local testing. Copy `.env.example` to `.env` and set:
 
 - `STRIPE_SECRET_KEY` (server-side, test secret key)
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (client-side, test publishable key)

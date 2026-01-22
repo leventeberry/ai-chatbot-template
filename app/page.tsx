@@ -142,7 +142,7 @@ export default function Home() {
               </div>
 
               <div className="bg-slate-950 rounded-lg p-4 font-mono text-sm text-slate-300 border border-slate-800 shadow-inner overflow-x-auto">
-                <pre>{`import { ChatWidget } from "@components/ChatWidget";
+                <pre>{`import { ChatWidget } from "@/components/chat-widget";
 
 function App() {
   return (

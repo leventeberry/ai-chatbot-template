@@ -1,16 +1,28 @@
-/* eslint-disable react-hooks/static-components */
 'use client';
-import React, { useMemo, type JSX } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 export type TextShimmerProps = {
   children: string;
-  as?: React.ElementType;
+  as?: keyof JSX.IntrinsicElements;
   className?: string;
   duration?: number;
   spread?: number;
 };
+
+const motionElements = {
+  p: motion.p,
+  span: motion.span,
+  div: motion.div,
+  label: motion.label,
+  h1: motion.h1,
+  h2: motion.h2,
+  h3: motion.h3,
+  h4: motion.h4,
+  h5: motion.h5,
+  h6: motion.h6,
+} satisfies Partial<Record<keyof JSX.IntrinsicElements, typeof motion.p>>;
 
 function TextShimmerComponent({
   children,
@@ -19,10 +31,7 @@ function TextShimmerComponent({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) {
-  // eslint-disable-next-line react-hooks/static-components
-  const MotionComponent = motion.create(
-    Component as keyof JSX.IntrinsicElements
-  );
+  const MotionComponent = motionElements[Component] ?? motion.p;
 
   const dynamicSpread = useMemo(() => {
     return children.length * spread;

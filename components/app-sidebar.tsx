@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useSyncExternalStore } from "react"
 import { usePathname } from "next/navigation"
 import {
   Activity,
   Gauge,
-  LayoutGrid,
   MessageSquareText,
   Settings,
   ShieldCheck,
@@ -80,37 +79,56 @@ const AUTH_USER_LAST_NAME_KEY = "auth_user_last_name"
 const AUTH_USER_ROLE_KEY = "auth_user_role"
 const AUTH_USER_TIER_KEY = "auth_user_tier"
 
+type UserSnapshot = {
+  email: string
+  firstName: string
+  lastName: string
+  role: string
+  tier: string
+}
+
+const emptySnapshot: UserSnapshot = {
+  email: data.user.email,
+  firstName: "",
+  lastName: "",
+  role: "",
+  tier: "Basic",
+}
+
+const subscribeToStorage = (callback: () => void) => {
+  if (typeof window === "undefined") {
+    return () => undefined
+  }
+  const handler = () => callback()
+  window.addEventListener("storage", handler)
+  return () => window.removeEventListener("storage", handler)
+}
+
+const getSnapshot = (): UserSnapshot => {
+  if (typeof window === "undefined") return emptySnapshot
+  return {
+    email: localStorage.getItem(AUTH_USER_EMAIL_KEY) ?? data.user.email,
+    firstName: localStorage.getItem(AUTH_USER_FIRST_NAME_KEY) ?? "",
+    lastName: localStorage.getItem(AUTH_USER_LAST_NAME_KEY) ?? "",
+    role: localStorage.getItem(AUTH_USER_ROLE_KEY) ?? "",
+    tier: localStorage.getItem(AUTH_USER_TIER_KEY) ?? "Basic",
+  }
+}
+
 export function AppSidebar() {
   const pathname = usePathname()
-  const [isMounted, setIsMounted] = useState(false)
-  const [user, setUser] = useState<UserInfo>(data.user)
-  const [userTier, setUserTier] = useState("Basic")
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!isMounted || typeof window === "undefined") return
-    const email = localStorage.getItem(AUTH_USER_EMAIL_KEY) ?? data.user.email
-    const firstName = localStorage.getItem(AUTH_USER_FIRST_NAME_KEY) ?? ""
-    const lastName = localStorage.getItem(AUTH_USER_LAST_NAME_KEY) ?? ""
-    const role = localStorage.getItem(AUTH_USER_ROLE_KEY) ?? ""
-    const tier = localStorage.getItem(AUTH_USER_TIER_KEY) ?? "Basic"
-    const fullName = `${firstName} ${lastName}`.trim()
-    const displayName = fullName || data.user.name
-
-    setUser({
-      name: displayName,
-      email,
-      avatar: data.user.avatar,
-    })
-    setUserTier(tier || role || "Basic")
-  }, [isMounted])
-
-  if (!isMounted) {
-    return null
+  const snapshot = useSyncExternalStore(
+    subscribeToStorage,
+    getSnapshot,
+    () => emptySnapshot
+  )
+  const fullName = `${snapshot.firstName} ${snapshot.lastName}`.trim()
+  const user: UserInfo = {
+    name: fullName || data.user.name,
+    email: snapshot.email,
+    avatar: data.user.avatar,
   }
+  const userTier = snapshot.tier || snapshot.role || "Basic"
   const navMain = navItems.map((item) => ({
     ...item,
     isActive:

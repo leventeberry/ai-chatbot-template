@@ -1,7 +1,8 @@
 'use client';
 
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import {
   Bot,
   Loader2,
@@ -98,13 +99,13 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
   const assistantAvatarUrl = GLOBAL_ASSISTANT_AVATAR_URL || undefined;
   const resolvedToken = token?.trim() || WIDGET_AUTH_TOKEN || undefined;
   const resolvedOrigin = origin?.trim() || undefined;
-  const requestHeaders =
-    resolvedToken || resolvedOrigin
-      ? {
-          ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
-          ...(resolvedOrigin ? { "X-Widget-Origin": resolvedOrigin } : {}),
-        }
-      : undefined;
+  const requestHeaders = useMemo(() => {
+    if (!resolvedToken && !resolvedOrigin) return undefined;
+    return {
+      ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
+      ...(resolvedOrigin ? { "X-Widget-Origin": resolvedOrigin } : {}),
+    };
+  }, [resolvedOrigin, resolvedToken]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -151,7 +152,7 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
     };
 
     void loadConfig();
-  }, [isOpen]);
+  }, [isOpen, requestHeaders]);
 
   useEffect(() => {
     if (hasAutoOpenedRef.current) return;
@@ -182,7 +183,7 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
     };
 
     void createSession();
-  }, [isOpen, sessionId]);
+  }, [isOpen, requestHeaders, sessionId]);
 
   useEffect(() => {
     if (!isOpen || messages.length > 0 || !sessionId) return;
@@ -246,7 +247,7 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
     };
 
     void loadHistory();
-  }, [isOpen, messages.length, sessionId]);
+  }, [isOpen, messages.length, requestHeaders, sessionId]);
 
   useEffect(() => {
     if (!isOpen || typeof window === "undefined") return;
@@ -327,9 +328,13 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
               <div className="flex items-center gap-3 text-primary-foreground">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
                   {widgetBranding?.logoUrl && widgetBranding.showLogo !== false ? (
-                    <img
+                    <Image
                       src={widgetBranding.logoUrl}
                       alt="Logo"
+                      width={24}
+                      height={24}
+                      sizes="24px"
+                      unoptimized
                       className="w-6 h-6 object-contain"
                     />
                   ) : (
@@ -401,9 +406,13 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
                         {isAi && (
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-1 overflow-hidden">
                             {assistantAvatarUrl ? (
-                              <img
+                              <Image
                                 src={assistantAvatarUrl}
                                 alt="Assistant avatar"
+                                width={32}
+                                height={32}
+                                sizes="32px"
+                                unoptimized
                                 className="w-full h-full object-cover"
                               />
                             ) : (

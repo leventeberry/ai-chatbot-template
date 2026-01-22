@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "../_components/dashboard-shell"
-import { formatDate } from "../../../lib/dashboard-helpers"
-import { type TokenSummary } from "../../../hooks/use-dashboard-data"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import {
+  DashboardSectionHeader,
+  formatDate,
+} from "@/components/dashboard/dashboard-helpers"
+import { type TokenSummary } from "@/hooks/use-dashboard-data"
 import {
   Card,
   CardContent,
@@ -29,12 +32,10 @@ export default function TokensPage() {
     <DashboardShell section="tokens">
       {(data) => (
         <section className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold">Embed & Tokens</h2>
-            <p className="text-sm text-muted-foreground">
-              Securely manage widget tokens and embed instructions.
-            </p>
-          </div>
+          <DashboardSectionHeader
+            title="Embed & Tokens"
+            description="Securely manage widget tokens and embed instructions."
+          />
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>

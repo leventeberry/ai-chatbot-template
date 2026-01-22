@@ -1,11 +1,14 @@
 "use client"
 
-import { DashboardShell } from "../_components/dashboard-shell"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import {
+  DashboardSectionHeader,
   formatDate,
+  LoadingLines,
   OverviewCard,
-  timeRangeLabel,
-} from "../../../lib/dashboard-helpers"
+  PerDomainActivityList,
+  TimeRangeSelect,
+} from "@/components/dashboard/dashboard-helpers"
 import {
   Card,
   CardContent,
@@ -13,55 +16,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
 
 export default function OverviewPage() {
   return (
     <DashboardShell section="overview">
       {(data) => (
         <section className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold">Overview</h2>
-              <p className="text-sm text-muted-foreground">
-                Snapshot of recent widget activity.
-              </p>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  {timeRangeLabel(data.timeRange)}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                  value={data.timeRange}
-                  onValueChange={(value) =>
-                    data.setTimeRange(value as "7" | "30" | "90")
-                  }
-                >
-                  <DropdownMenuRadioItem value="7">
-                    Last 7 days
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="30">
-                    Last 30 days
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="90">
-                    Last 90 days
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DashboardSectionHeader
+            title="Overview"
+            description="Snapshot of recent widget activity."
+            actions={
+              <TimeRangeSelect
+                value={data.timeRange}
+                onChange={(value) => data.setTimeRange(value)}
+              />
+            }
+          />
           <div className="grid gap-4 md:grid-cols-3">
             <OverviewCard
               label={`Sessions (${data.timeRange}d)`}
@@ -110,13 +81,7 @@ export default function OverviewPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.conversationsLoading && (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                )}
+                {data.conversationsLoading && <LoadingLines />}
                 {!data.conversationsLoading &&
                   data.conversations.length === 0 && (
                     <p className="text-sm text-muted-foreground">
@@ -153,38 +118,11 @@ export default function OverviewPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.analyticsLoading && (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                )}
-                {!data.analyticsLoading &&
-                  !data.analytics?.per_domain.length && (
-                    <p className="text-sm text-muted-foreground">
-                      No domain data yet.
-                    </p>
-                  )}
-                {!data.analyticsLoading &&
-                  data.analytics?.per_domain
-                    .slice(0, 5)
-                    .map((row, index, items) => (
-                      <div
-                        key={row.origin || "unknown"}
-                        className="space-y-2 text-sm"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">
-                            {row.origin || "Unknown origin"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {row.sessions} sessions • {row.messages} messages
-                          </span>
-                        </div>
-                        {index < items.length - 1 && <Separator />}
-                      </div>
-                    ))}
+                <PerDomainActivityList
+                  items={(data.analytics?.per_domain ?? []).slice(0, 5)}
+                  isLoading={data.analyticsLoading}
+                  emptyMessage="No domain data yet."
+                />
               </CardContent>
             </Card>
           </div>

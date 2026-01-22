@@ -1,7 +1,12 @@
 "use client"
 
-import { DashboardShell } from "../_components/dashboard-shell"
-import { formatDate, timeRangeLabel } from "../../../lib/dashboard-helpers"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import {
+  DashboardSectionHeader,
+  formatDate,
+  LoadingLines,
+  TimeRangeSelect,
+} from "@/components/dashboard/dashboard-helpers"
 import {
   Card,
   CardContent,
@@ -10,68 +15,43 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ConversationsPage() {
   return (
     <DashboardShell section="conversations">
       {(data) => (
         <section className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold">Conversations</h2>
-              <p className="text-sm text-muted-foreground">
-                Review recent chat sessions for this widget.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    {timeRangeLabel(data.conversationDateRange)}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuRadioGroup
-                    value={data.conversationDateRange}
-                    onValueChange={(value) =>
-                      data.setConversationDateRange(value as "7" | "30" | "90")
-                    }
-                  >
-                    <DropdownMenuRadioItem value="7">
-                      Last 7 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="30">
-                      Last 30 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="90">
-                      Last 90 days
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-1">
-                {(["all", "open", "resolved"] as const).map((status) => (
-                  <Button
-                    key={status}
-                    variant={data.conversationStatus === status ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => data.setConversationStatus(status)}
-                  >
-                    {status === "all" ? "All" : status === "open" ? "Open" : "Resolved"}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <DashboardSectionHeader
+            title="Conversations"
+            description="Review recent chat sessions for this widget."
+            actions={
+              <>
+                <TimeRangeSelect
+                  value={data.conversationDateRange}
+                  onChange={(value) => data.setConversationDateRange(value)}
+                />
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-1">
+                  {(["all", "open", "resolved"] as const).map((status) => (
+                    <Button
+                      key={status}
+                      variant={
+                        data.conversationStatus === status ? "default" : "ghost"
+                      }
+                      size="sm"
+                      onClick={() => data.setConversationStatus(status)}
+                    >
+                      {status === "all"
+                        ? "All"
+                        : status === "open"
+                        ? "Open"
+                        : "Resolved"}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            }
+          />
           <div className="grid gap-6 md:grid-cols-[1fr_1.5fr]">
             <Card>
               <CardHeader>
@@ -81,13 +61,7 @@ export default function ConversationsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.conversationsLoading && (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                )}
+                {data.conversationsLoading && <LoadingLines />}
                 {!data.conversationsLoading && data.conversations.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     No conversations yet.
