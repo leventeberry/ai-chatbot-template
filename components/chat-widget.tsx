@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { evaluateGuardrails } from "@/lib/guardrails";
 
 type ChatMessage = {
   id: number;
@@ -259,11 +260,26 @@ export function ChatWidget({ token, origin }: ChatWidgetProps) {
     const trimmed = inputValue.trim();
     if (!trimmed || isSending) return;
 
+    const guardrailDecision = evaluateGuardrails(trimmed);
     const optimisticUserMessage: ChatMessage = {
       id: Date.now(),
       role: "user",
       content: trimmed,
     };
+
+    if (guardrailDecision.action !== "allow") {
+      setMessages((prev) => [
+        ...prev,
+        optimisticUserMessage,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: guardrailDecision.message,
+        },
+      ]);
+      setInputValue("");
+      return;
+    }
 
     setMessages((prev) => [...prev, optimisticUserMessage]);
     setInputValue("");

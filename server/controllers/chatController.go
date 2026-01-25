@@ -66,8 +66,24 @@ func SendChatMessage(chatService services.ChatService) gin.HandlerFunc {
 			return
 		}
 
-		if strings.TrimSpace(input.Message) == "" {
+		trimmed := strings.TrimSpace(input.Message)
+		if trimmed == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Message is required"})
+			return
+		}
+
+		decision := services.EvaluateChatGuardrails(trimmed)
+		if decision.Action == services.GuardrailHardBlock {
+			services.LogGuardrailDecision(decision, "chat_message")
+			c.JSON(http.StatusBadRequest, gin.H{"error": decision.SafeResponse})
+			return
+		}
+		if decision.Action == services.GuardrailSoftBlock {
+			services.LogGuardrailDecision(decision, "chat_message")
+			c.JSON(http.StatusOK, ChatResponse{
+				Role:    "assistant",
+				Content: decision.SafeResponse,
+			})
 			return
 		}
 
@@ -76,7 +92,7 @@ func SendChatMessage(chatService services.ChatService) gin.HandlerFunc {
 
 		sessionID := normalizeSessionID(input.SessionID)
 		origin := resolveRequestOrigin(c)
-		resp := chatService.SendMessage(ctx, tenantID, widgetID, sessionID, origin, input.Message)
+		resp := chatService.SendMessage(ctx, tenantID, widgetID, sessionID, origin, trimmed)
 		c.JSON(http.StatusOK, resp)
 	}
 }

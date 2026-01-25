@@ -125,6 +125,37 @@ export default function SettingsPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
+                <CardTitle className="text-base">AI guardrails</CardTitle>
+                <CardDescription>
+                  Provide safe guidance for the assistant.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">System prompt</label>
+                  <textarea
+                    value={data.systemPrompt}
+                    onChange={(event) => data.setSystemPrompt(event.target.value)}
+                    rows={4}
+                    placeholder="Define behavior, tone, and safety boundaries."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Documentation</label>
+                  <textarea
+                    value={data.documentation}
+                    onChange={(event) => data.setDocumentation(event.target.value)}
+                    rows={4}
+                    placeholder="Paste support docs or FAQ content."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="text-base">Placement</CardTitle>
                 <CardDescription>Position the widget on the page.</CardDescription>
               </CardHeader>
@@ -212,6 +243,9 @@ export default function SettingsPage() {
             </Button>
             {data.saveMessage && (
               <span className="text-sm text-emerald-600">{data.saveMessage}</span>
+            )}
+            {data.error && (
+              <span className="text-sm text-destructive">{data.error}</span>
             )}
             <span className="text-xs text-muted-foreground">
               Saving the allowed origin enforces widget CORS checks.

@@ -11,6 +11,7 @@ import (
 
 	"chatbot_api/models"
 	"chatbot_api/repositories"
+	"chatbot_api/services"
 )
 
 type CreateTenantRequest struct {
@@ -100,6 +101,11 @@ func CreateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 		var input CreateWidgetRequest
 		if err := c.ShouldBindJSON(&input); err != nil || input.TenantID == "" || input.Name == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id and name are required"})
+			return
+		}
+
+		if err := services.ValidateWidgetConfigGuardrails(input.Config); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -213,6 +219,10 @@ func UpdateWidget(widgetRepo repositories.WidgetRepository) gin.HandlerFunc {
 			widget.AllowedOrigin = *input.AllowedOrigin
 		}
 		if input.Config != nil {
+			if err := services.ValidateWidgetConfigGuardrails(*input.Config); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
 			widget.Config = *input.Config
 		}
 

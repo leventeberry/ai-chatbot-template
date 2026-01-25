@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { buildEmbedSnippet } from "@/components/dashboard/dashboard-helpers"
+import { evaluateGuardrails } from "@/lib/guardrails"
 
 export type DashboardSection =
   | "overview"
@@ -305,6 +306,19 @@ export function useDashboardData(section: DashboardSection) {
     setSaveMessage(null)
     setError(null)
 
+    const promptDecision = evaluateGuardrails(systemPrompt)
+    if (promptDecision.action !== "allow") {
+      setError("System prompt contains disallowed content.")
+      setIsSaving(false)
+      return
+    }
+    const docsDecision = evaluateGuardrails(documentation)
+    if (docsDecision.action !== "allow") {
+      setError("Documentation contains disallowed content.")
+      setIsSaving(false)
+      return
+    }
+
     const normalizedOrigin = normalizeAllowedOrigin(allowedOrigin)
     if (!normalizedOrigin && currentOrigin) {
       setAllowedOrigin(currentOrigin)
@@ -519,6 +533,10 @@ export function useDashboardData(section: DashboardSection) {
     setOpenOnLoad,
     showOnline,
     setShowOnline,
+    systemPrompt,
+    setSystemPrompt,
+    documentation,
+    setDocumentation,
     isSaving,
     saveMessage,
     error,
