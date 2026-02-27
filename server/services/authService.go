@@ -31,6 +31,18 @@ func NewAuthService(
 }
 
 // Login authenticates a user and returns a JWT token
+// @Summary      Login user
+// @Description  Authenticate a user with email and password, returns JWT token
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        email    string  true  "User email"
+// @Param        password string  true  "User password"
+// @Success      200      {object}  middleware.Authentication  "Login successful"
+// @Failure      400      {object}  map[string]string  "Invalid request"
+// @Failure      401      {object}  map[string]string  "Invalid credentials"
+// @Failure      500      {object}  map[string]string  "Server error"
+// @Router       /login [post]
 func (s *authService) Login(email, password string) (*models.User, *middleware.Authentication, error) {
 	// Validate credentials
 	user, err := s.ValidateCredentials(email, password)
@@ -59,6 +71,17 @@ func (s *authService) Login(email, password string) (*models.User, *middleware.A
 }
 
 // Register creates a new user account and returns a JWT token
+// @Summary      Register new user
+// @Description  Create a new user account and receive JWT token
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        user  body      RegisterInput  true  "User registration data"
+// @Success      200   {object}  middleware.Authentication  "Registration successful"
+// @Failure      400   {object}  map[string]string  "Invalid request"
+// @Failure      409   {object}  map[string]string  "Email already registered"
+// @Failure      500   {object}  map[string]string  "Server error"
+// @Router       /register [post]
 func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.Authentication, error) {
 	if s.tenantRepo == nil || s.widgetRepo == nil {
 		return nil, nil, ErrMissingTenantWidget
@@ -149,6 +172,17 @@ func (s *authService) Register(input *RegisterInput) (*models.User, *middleware.
 	return user, token, nil
 }
 
+// ensureUserTenantWidget ensures that a user has a tenant and widget
+// @Summary      Ensure user tenant and widget
+// @Description  Ensures a user has a tenant and widget, creating them if they don't exist
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        user  body      models.User  true  "User model"
+// @Success      200   {object}  nil  "User tenant and widget ensured"
+// @Failure      400   {object}  map[string]string  "Invalid request"
+// @Failure      500   {object}  map[string]string  "Server error"
+// @Router       /ensure-user-tenant-widget [post]
 func (s *authService) ensureUserTenantWidget(user *models.User) error {
 	if user.TenantID != "" && user.WidgetID != "" {
 		return nil
@@ -192,6 +226,18 @@ func (s *authService) ensureUserTenantWidget(user *models.User) error {
 }
 
 // ValidateCredentials validates user email and password
+// @Summary      Validate user credentials
+// @Description  Validates user email and password, returns user if valid
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        email    string  true  "User email"
+// @Param        password string  true  "User password"
+// @Success      200      {object}  models.User  "Credentials valid"
+// @Failure      400      {object}  map[string]string  "Invalid request"
+// @Failure      401      {object}  map[string]string  "Invalid credentials"
+// @Failure      500      {object}  map[string]string  "Server error"
+// @Router       /validate-credentials [post]
 func (s *authService) ValidateCredentials(email, password string) (*models.User, error) {
 	// Find user by email
 	user, err := s.userRepo.FindByEmail(email)
